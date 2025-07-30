@@ -39,26 +39,63 @@ const mockConferences: Conference[] = [
   }
 ];
 
+const mockUsers: User[] = [
+  {
+    dni: '11223344',
+    nombres: 'María González López',
+    sexo: false,
+    fechaNacimiento: '1992-07-22',
+    telefono: '923456789',
+    rol: 'Oyente',
+    password: null,
+    idRegion: 'd813ab73-57eb-4772-a295-22fde6a065a8',
+    region: {
+      id: 'd813ab73-57eb-4772-a295-22fde6a065a8',
+      nombres: 'Cusco',
+      conferencias: []
+    },
+    participaciones: [],
+    pagos: []
+  },
+  {
+    dni: '99887766',
+    nombres: 'Carlos Rodríguez Mendoza',
+    sexo: true,
+    fechaNacimiento: '1988-11-08',
+    telefono: '934567890',
+    rol: 'Oyente',
+    password: null,
+    idRegion: '44e2846d-0e56-4aca-88ca-1b02bd66c2e3',
+    region: {
+      id: '44e2846d-0e56-4aca-88ca-1b02bd66c2e3',
+      nombres: 'Lima',
+      conferencias: []
+    },
+    participaciones: [],
+    pagos: []
+  }
+];
+
 const mockParticipations: Participation[] = [
   {
     dniUsuario: '11223344',
     idConferencia: '339ce11a-68aa-4580-975c-3a138ddc5e79',
     fecha: '2025-01-15T10:30:00.000Z',
-    usuario: {} as User, // Will be populated from API
+    usuario: mockUsers[0],
     conferencia: mockConferences[0]
   },
   {
     dniUsuario: '99887766',
     idConferencia: '339ce11a-68aa-4580-975c-3a138ddc5e79',
     fecha: '2025-01-16T14:20:00.000Z',
-    usuario: {} as User, // Will be populated from API
+    usuario: mockUsers[1],
     conferencia: mockConferences[0]
   },
   {
     dniUsuario: '11223344',
     idConferencia: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     fecha: '2025-01-18T09:15:00.000Z',
-    usuario: {} as User, // Will be populated from API
+    usuario: mockUsers[0],
     conferencia: mockConferences[1]
   }
 ];
