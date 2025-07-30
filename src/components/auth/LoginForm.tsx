@@ -75,13 +75,6 @@ export const LoginForm: React.FC = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          <div className="bg-gray-50 rounded-md p-3">
-            <p className="text-xs text-gray-600 mb-2">Datos de prueba:</p>
-            <p className="text-xs"><strong>Admin:</strong> DNI: 12345678, Pass: admin123</p>
-            <p className="text-xs"><strong>Encargado:</strong> DNI: 55667788, Pass: admin123</p>
-          </div>
-        </div>
       </Card>
     </div>
   );
