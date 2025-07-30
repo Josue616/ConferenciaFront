@@ -22,7 +22,7 @@ export interface UserRequest {
   fechaNacimiento: string;
   telefono: string;
   rol: 'Admin' | 'Encargado' | 'Oyente';
-  password: string;
+  password: string | null;
   idRegion: string;
 }
 

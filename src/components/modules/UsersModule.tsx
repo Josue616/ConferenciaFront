@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle } from 'lucide-react';
+import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User, UserX } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -34,7 +34,7 @@ export const UsersModule: React.FC = () => {
     fechaNacimiento: '',
     telefono: '',
     rol: 'Oyente',
-    password: '',
+    password: null,
     idRegion: ''
   });
 
@@ -84,11 +84,17 @@ export const UsersModule: React.FC = () => {
     setError('');
     
     try {
+      // Preparar los datos según el rol
+      const submitData = {
+        ...formData,
+        password: formData.rol === 'Oyente' ? null : formData.password
+      };
+
       if (editingUser) {
-        const { dni, ...updateData } = formData;
+        const { dni, ...updateData } = submitData;
         await usersApi.update(editingUser.dni, updateData);
       } else {
-        await usersApi.create(formData);
+        await usersApi.create(submitData);
       }
       await loadData();
       handleCloseModal();
@@ -109,7 +115,7 @@ export const UsersModule: React.FC = () => {
       fechaNacimiento: formatDateForInput(user.fechaNacimiento),
       telefono: user.telefono,
       rol: user.rol,
-      password: user.password || '',
+      password: user.password,
       idRegion: user.idRegion
     });
     setIsModalOpen(true);
@@ -126,7 +132,7 @@ export const UsersModule: React.FC = () => {
       fechaNacimiento: '',
       telefono: '',
       rol: 'Oyente',
-      password: '',
+      password: null,
       idRegion: ''
     });
   };
@@ -146,6 +152,20 @@ export const UsersModule: React.FC = () => {
     }
     return ['Oyente'];
   };
+
+  const getUserIcon = (sexo: boolean) => {
+    return sexo ? (
+      <User className="w-5 h-5 text-blue-600" />
+    ) : (
+      <UserX className="w-5 h-5 text-pink-600" />
+    );
+  };
+
+  const getUserIconBg = (sexo: boolean) => {
+    return sexo ? 'bg-blue-100' : 'bg-pink-100';
+  };
+
+  const isPasswordRequired = formData.rol !== 'Oyente';
 
   if (loading) {
     return (
@@ -253,8 +273,8 @@ export const UsersModule: React.FC = () => {
                 <tr key={user.dni} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-blue-600" />
+                      <div className={`w-10 h-10 ${getUserIconBg(user.sexo)} rounded-full flex items-center justify-center`}>
+                        {getUserIcon(user.sexo)}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
@@ -402,10 +422,11 @@ export const UsersModule: React.FC = () => {
             <Input
               label="Contraseña"
               type="password"
-              value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              placeholder="Contraseña del usuario"
-              required
+              value={formData.password || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value || null }))}
+              placeholder={isPasswordRequired ? "Contraseña del usuario" : "Sin contraseña (Oyente)"}
+              required={isPasswordRequired}
+              disabled={!isPasswordRequired}
             />
           </div>
 
@@ -416,7 +437,14 @@ export const UsersModule: React.FC = () => {
               </label>
               <select
                 value={formData.rol}
-                onChange={(e) => setFormData(prev => ({ ...prev, rol: e.target.value as 'Admin' | 'Encargado' | 'Oyente' }))}
+                onChange={(e) => {
+                  const newRole = e.target.value as 'Admin' | 'Encargado' | 'Oyente';
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    rol: newRole,
+                    password: newRole === 'Oyente' ? null : prev.password
+                  }));
+                }}
                 className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
                 required
               >
@@ -447,6 +475,18 @@ export const UsersModule: React.FC = () => {
               </select>
             </div>
           </div>
+
+          {/* Password Info */}
+          {formData.rol === 'Oyente' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                <p className="text-sm text-blue-700">
+                  Los usuarios con rol "Oyente" no requieren contraseña para el sistema.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <Button 
