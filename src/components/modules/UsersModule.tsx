@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User, UserX } from 'lucide-react';
+import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User as UserIcon, UserX } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -155,7 +155,7 @@ export const UsersModule: React.FC = () => {
 
   const getUserIcon = (sexo: boolean) => {
     return sexo ? (
-      <User className="w-5 h-5 text-blue-600" />
+      <UserIcon className="w-5 h-5 text-blue-600" />
     ) : (
       <UserX className="w-5 h-5 text-pink-600" />
     );
