@@ -362,8 +362,111 @@ export const regionsApi = {
 // Participations API
 export const participationsApi = {
   getAll: async (): Promise<Participation[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockParticipations];
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participaciones');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching participations:', error);
+      throw error;
+    }
+  },
+
+  getByUser: async (dni: string): Promise<Participation[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones/usuario/${dni}`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participaciones del usuario');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user participations:', error);
+      throw error;
+    }
+  },
+
+  getByRegion: async (regionId: string): Promise<Participation[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones/region/${regionId}`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participaciones de la región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching region participations:', error);
+      throw error;
+    }
+  },
+
+  getByConference: async (conferenceId: string): Promise<Participation[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones/conferencia/${conferenceId}`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participaciones de la conferencia');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching conference participations:', error);
+      throw error;
+    }
+  },
+
+  create: async (participation: ParticipationRequest): Promise<Participation> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones`, {
+        method: 'POST',
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(participation)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear participación');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating participation:', error);
+      throw error;
+    }
   }
 };
 

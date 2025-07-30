@@ -1,36 +1,128 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, Calendar, MapPin, Users } from 'lucide-react';
+import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, User as UserIcon, Calendar as CalendarIcon } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { Participation } from '../../types';
-import { participationsApi } from '../../services/api';
+import { Pagination } from '../ui/Pagination';
+import { Participation, ParticipationRequest, Conference, Region, User } from '../../types';
+import { participationsApi, conferencesApi, regionsApi, usersApi } from '../../services/api';
+
+const ITEMS_PER_PAGE = 10;
 
 export const ParticipationsModule: React.FC = () => {
   const [participations, setParticipations] = useState<Participation[]>([]);
+  const [conferences, setConferences] = useState<Conference[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedConference, setSelectedConference] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState<ParticipationRequest>({
+    dniUsuario: '',
+    idConferencia: ''
+  });
 
   useEffect(() => {
-    loadParticipations();
+    loadData();
   }, []);
 
-  const loadParticipations = async () => {
+  const loadData = async () => {
     try {
-      const data = await participationsApi.getAll();
-      setParticipations(data);
+      setError('');
+      const [participationsData, conferencesData, regionsData, usersData] = await Promise.all([
+        participationsApi.getAll(),
+        conferencesApi.getAll(),
+        regionsApi.getAll(),
+        usersApi.getAll()
+      ]);
+      setParticipations(participationsData);
+      setConferences(conferencesData);
+      setRegions(regionsData);
+      setUsers(usersData);
     } catch (error) {
-      console.error('Error loading participations:', error);
+      console.error('Error loading data:', error);
+      setError('Error al cargar los datos. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredParticipations = participations.filter(participation =>
-    participation.usuario.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    participation.conferencia.nombres.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtros
+  const filteredParticipations = participations.filter(participation => {
+    const matchesSearch = participation.nombreUsuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         participation.nombreConferencia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         participation.dniUsuario.includes(searchTerm);
+    
+    const matchesConference = !selectedConference || participation.idConferencia === selectedConference;
+    
+    // Para filtrar por región, necesitamos encontrar la conferencia y su región
+    let matchesRegion = true;
+    if (selectedRegion) {
+      const conference = conferences.find(c => c.id === participation.idConferencia);
+      matchesRegion = conference ? conference.idRegion === selectedRegion : false;
+    }
+    
+    return matchesSearch && matchesConference && matchesRegion;
+  });
+
+  // Paginación
+  const totalPages = Math.ceil(filteredParticipations.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedParticipations = filteredParticipations.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedConference, selectedRegion]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    
+    try {
+      await participationsApi.create(formData);
+      await loadData();
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error creating participation:', error);
+      setError('Error al crear la participación. Por favor, intenta nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setError('');
+    setFormData({
+      dniUsuario: '',
+      idConferencia: ''
+    });
+  };
+
+  const getConferenceRegion = (conferenceId: string) => {
+    const conference = conferences.find(c => c.id === conferenceId);
+    return conference ? conference.nombreRegion : 'Desconocida';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   if (loading) {
     return (
@@ -43,88 +135,264 @@ export const ParticipationsModule: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Participaciones</h1>
-        <p className="text-gray-600">Gestiona las participaciones en conferencias</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Participaciones</h1>
+          <p className="text-gray-600">Gestiona las participaciones en conferencias</p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
+          Nueva Participación
+        </Button>
       </div>
 
-      {/* Search */}
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
       <Card>
-        <Input
-          placeholder="Buscar por usuario o conferencia..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<Search className="w-4 h-4 text-gray-400" />}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <Input
+              placeholder="Buscar por usuario, conferencia o DNI..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              icon={<Search className="w-4 h-4 text-gray-400" />}
+            />
+          </div>
+          <div>
+            <select
+              value={selectedConference}
+              onChange={(e) => setSelectedConference(e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+            >
+              <option value="">Todas las conferencias</option>
+              {conferences.map(conference => (
+                <option key={conference.id} value={conference.id}>
+                  {conference.nombres}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+            >
+              <option value="">Todas las regiones</option>
+              {regions.map(region => (
+                <option key={region.id} value={region.id}>
+                  {region.nombres}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Participations Table */}
+      <Card padding="sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Participante
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Conferencia
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Región
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha Inscripción
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedParticipations.map((participation) => (
+                <tr key={participation.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {participation.nombreUsuario}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          DNI: {participation.dniUsuario}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                      {participation.nombreConferencia}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {getConferenceRegion(participation.idConferencia)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {formatDate(participation.fecha)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge variant="success">
+                      Inscrito
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredParticipations.length}
         />
       </Card>
 
-      {/* Participations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredParticipations.map((participation, index) => (
-          <Card key={`${participation.dniUsuario}-${participation.idConferencia}-${index}`} className="hover:shadow-md transition-shadow">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {participation.usuario.nombres}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      DNI: {participation.usuario.dni}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="success">
-                  Inscrito
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-1">Conferencia</h4>
-                  <p className="text-sm text-gray-700">{participation.conferencia.nombres}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {participation.conferencia.nombreRegion}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Users className="w-4 h-4 mr-2" />
-                    {participation.usuario.rol}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center text-gray-600">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Inscrito: {new Date(participation.fecha).toLocaleDateString()}
-                  </div>
-                  <div className="text-gray-500">
-                    {new Date(participation.conferencia.fechaInicio).toLocaleDateString()} - {new Date(participation.conferencia.fechaFin).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredParticipations.length === 0 && (
+      {filteredParticipations.length === 0 && !loading && (
         <Card className="text-center py-12">
           <UserCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No se encontraron participaciones
           </h3>
           <p className="text-gray-600">
-            {searchTerm ? 'Intenta ajustar los términos de búsqueda' : 'No hay participaciones registradas'}
+            {searchTerm || selectedConference || selectedRegion ? 'Intenta ajustar los filtros de búsqueda' : 'No hay participaciones registradas'}
           </p>
         </Card>
       )}
+
+      {/* Participation Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title="Nueva Participación"
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Usuario <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.dniUsuario}
+              onChange={(e) => setFormData(prev => ({ ...prev, dniUsuario: e.target.value }))}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+              required
+            >
+              <option value="">Seleccionar usuario</option>
+              {users.map(user => (
+                <option key={user.dni} value={user.dni}>
+                  {user.nombres} - {user.dni}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Conferencia <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.idConferencia}
+              onChange={(e) => setFormData(prev => ({ ...prev, idConferencia: e.target.value }))}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+              required
+            >
+              <option value="">Seleccionar conferencia</option>
+              {conferences.map(conference => (
+                <option key={conference.id} value={conference.id}>
+                  {conference.nombres} - {conference.nombreRegion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Conference Info */}
+          {formData.idConferencia && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              {(() => {
+                const selectedConf = conferences.find(c => c.id === formData.idConferencia);
+                return selectedConf ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-blue-800">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      <span>
+                        {new Date(selectedConf.fechaInicio).toLocaleDateString()} - {new Date(selectedConf.fechaFin).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm text-blue-800">
+                      <Users className="w-4 h-4 mr-2" />
+                      <span>
+                        Capacidad: {selectedConf.participantesInscritos}/{selectedConf.capacidad}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm text-blue-800">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      <span>{selectedConf.nombreRegion}</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={handleCloseModal}
+              disabled={submitting}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              loading={submitting}
+              disabled={submitting}
+              icon={UserCheck}
+              className="w-full sm:w-auto"
+            >
+              Crear Participación
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

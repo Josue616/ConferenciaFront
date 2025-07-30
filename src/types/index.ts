@@ -45,11 +45,17 @@ export interface Conference {
 }
 
 export interface Participation {
+  id: string;
+  dniUsuario: string;
+  nombreUsuario: string;
+  idConferencia: string;
+  nombreConferencia: string;
+  fecha: string;
+}
+
+export interface ParticipationRequest {
   dniUsuario: string;
   idConferencia: string;
-  fecha: string;
-  usuario: User;
-  conferencia: Conference;
 }
 
 export interface Payment {
