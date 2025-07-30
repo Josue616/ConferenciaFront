@@ -5,16 +5,31 @@ export interface User {
   fechaNacimiento: string;
   telefono: string;
   rol: 'Admin' | 'Encargado' | 'Oyente';
+  password?: string;
+  idRegion: string;
   region: {
     id: string;
     nombres: string;
   };
+  participaciones?: Participation[];
   pagos?: Payment[];
+}
+
+export interface UserRequest {
+  dni?: string; // Solo para crear, no para editar
+  nombres: string;
+  sexo: boolean;
+  fechaNacimiento: string;
+  telefono: string;
+  rol: 'Admin' | 'Encargado' | 'Oyente';
+  password: string;
+  idRegion: string;
 }
 
 export interface Region {
   id: string;
   nombres: string;
+  conferencias?: Conference[];
 }
 
 export interface Conference {

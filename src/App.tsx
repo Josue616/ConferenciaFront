@@ -11,12 +11,19 @@ import { RegionsModule } from './components/modules/RegionsModule';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem('currentView') || 'dashboard';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (!isAuthenticated) {
     return <LoginForm />;
   }
+
+  const handleViewChange = (view: string) => {
+    setCurrentView(view);
+    localStorage.setItem('currentView', view);
+  };
 
   const renderCurrentView = () => {
     switch (currentView) {
@@ -41,7 +48,7 @@ const AppContent: React.FC = () => {
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={handleViewChange}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />

@@ -1,36 +1,135 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin } from 'lucide-react';
+import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { User } from '../../types';
-import { usersApi } from '../../services/api';
+import { Pagination } from '../ui/Pagination';
+import { User, Region, UserRequest } from '../../types';
+import { usersApi, regionsApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { formatDateForInput, formatDateForDisplay } from '../../utils/dateUtils';
+
+const ITEMS_PER_PAGE = 10;
 
 export const UsersModule: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState<UserRequest>({
+    dni: '',
+    nombres: '',
+    sexo: true,
+    fechaNacimiento: '',
+    telefono: '',
+    rol: 'Oyente',
+    password: '',
+    idRegion: ''
+  });
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
 
-  const loadUsers = async () => {
+  const loadData = async () => {
     try {
-      const data = await usersApi.getAll();
-      setUsers(data);
+      setError('');
+      const [usersData, regionsData] = await Promise.all([
+        usersApi.getAll(),
+        regionsApi.getAll()
+      ]);
+      setUsers(usersData);
+      setRegions(regionsData);
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('Error loading data:', error);
+      setError('Error al cargar los datos. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.dni.includes(searchTerm)
-  );
+  // Filtros
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.dni.includes(searchTerm);
+    const matchesRole = !selectedRole || user.rol === selectedRole;
+    const matchesRegion = !selectedRegion || user.idRegion === selectedRegion;
+    return matchesSearch && matchesRole && matchesRegion;
+  });
+
+  // Paginación
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedRole, selectedRegion]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    
+    try {
+      if (editingUser) {
+        const { dni, ...updateData } = formData;
+        await usersApi.update(editingUser.dni, updateData);
+      } else {
+        await usersApi.create(formData);
+      }
+      await loadData();
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving user:', error);
+      setError('Error al guardar el usuario. Por favor, intenta nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      dni: user.dni,
+      nombres: user.nombres,
+      sexo: user.sexo,
+      fechaNacimiento: formatDateForInput(user.fechaNacimiento),
+      telefono: user.telefono,
+      rol: user.rol,
+      password: user.password || '',
+      idRegion: user.idRegion
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+    setError('');
+    setFormData({
+      dni: '',
+      nombres: '',
+      sexo: true,
+      fechaNacimiento: '',
+      telefono: '',
+      rol: 'Oyente',
+      password: '',
+      idRegion: ''
+    });
+  };
 
   const getRoleBadgeVariant = (rol: string) => {
     switch (rol) {
@@ -39,6 +138,13 @@ export const UsersModule: React.FC = () => {
       case 'Oyente': return 'secondary';
       default: return 'secondary';
     }
+  };
+
+  const getAvailableRoles = () => {
+    if (isAdmin) {
+      return ['Encargado', 'Oyente'];
+    }
+    return ['Oyente'];
   };
 
   if (loading) {
@@ -52,19 +158,65 @@ export const UsersModule: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
-        <p className="text-gray-600">Gestiona los usuarios del sistema</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+          <p className="text-gray-600">Gestiona los usuarios del sistema</p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
+          Nuevo Usuario
+        </Button>
       </div>
 
-      {/* Search */}
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
       <Card>
-        <Input
-          placeholder="Buscar usuarios por nombre o DNI..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          icon={<Search className="w-4 h-4 text-gray-400" />}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <Input
+              placeholder="Buscar por nombre o DNI..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              icon={<Search className="w-4 h-4 text-gray-400" />}
+            />
+          </div>
+          <div>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+            >
+              <option value="">Todos los roles</option>
+              <option value="Admin">Admin</option>
+              <option value="Encargado">Encargado</option>
+              <option value="Oyente">Oyente</option>
+            </select>
+          </div>
+          <div>
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+            >
+              <option value="">Todas las regiones</option>
+              {regions.map(region => (
+                <option key={region.id} value={region.id}>
+                  {region.nombres}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </Card>
 
       {/* Users Table */}
@@ -89,12 +241,15 @@ export const UsersModule: React.FC = () => {
                   Rol
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Información
+                  Fecha Nac.
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <tr key={user.dni} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -134,27 +289,187 @@ export const UsersModule: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
-                      {new Date(user.fechaNacimiento).toLocaleDateString()}
+                      {formatDateForDisplay(user.fechaNacimiento)}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Edit}
+                      onClick={() => handleEdit(user)}
+                      className="text-blue-600 hover:text-blue-700"
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredUsers.length}
+        />
       </Card>
 
-      {filteredUsers.length === 0 && (
+      {filteredUsers.length === 0 && !loading && (
         <Card className="text-center py-12">
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No se encontraron usuarios
           </h3>
           <p className="text-gray-600">
-            {searchTerm ? 'Intenta ajustar los términos de búsqueda' : 'No hay usuarios registrados'}
+            {searchTerm || selectedRole || selectedRegion ? 'Intenta ajustar los filtros de búsqueda' : 'No hay usuarios registrados'}
           </p>
         </Card>
       )}
+
+      {/* User Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!editingUser && (
+              <Input
+                label="DNI"
+                value={formData.dni}
+                onChange={(e) => setFormData(prev => ({ ...prev, dni: e.target.value }))}
+                placeholder="Número de DNI"
+                required
+              />
+            )}
+            
+            <Input
+              label="Nombres completos"
+              value={formData.nombres}
+              onChange={(e) => setFormData(prev => ({ ...prev, nombres: e.target.value }))}
+              placeholder="Nombres y apellidos"
+              required
+              className={!editingUser ? 'md:col-span-1' : 'md:col-span-2'}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sexo <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.sexo ? 'true' : 'false'}
+                onChange={(e) => setFormData(prev => ({ ...prev, sexo: e.target.value === 'true' }))}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                required
+              >
+                <option value="true">Masculino</option>
+                <option value="false">Femenino</option>
+              </select>
+            </div>
+
+            <Input
+              label="Fecha de nacimiento"
+              type="date"
+              value={formData.fechaNacimiento}
+              onChange={(e) => setFormData(prev => ({ ...prev, fechaNacimiento: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Teléfono"
+              value={formData.telefono}
+              onChange={(e) => setFormData(prev => ({ ...prev, telefono: e.target.value }))}
+              placeholder="Número de teléfono"
+              required
+            />
+
+            <Input
+              label="Contraseña"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="Contraseña del usuario"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rol <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.rol}
+                onChange={(e) => setFormData(prev => ({ ...prev, rol: e.target.value as 'Admin' | 'Encargado' | 'Oyente' }))}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                required
+              >
+                {getAvailableRoles().map(role => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Región <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.idRegion}
+                onChange={(e) => setFormData(prev => ({ ...prev, idRegion: e.target.value }))}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                required
+              >
+                <option value="">Seleccionar región</option>
+                {regions.map(region => (
+                  <option key={region.id} value={region.id}>
+                    {region.nombres}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={handleCloseModal}
+              disabled={submitting}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              loading={submitting}
+              disabled={submitting}
+              icon={editingUser ? Edit : UserPlus}
+              className="w-full sm:w-auto"
+            >
+              {editingUser ? 'Actualizar' : 'Crear'} Usuario
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -32,16 +32,16 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20">
       <div 
-        className="flex justify-center pt-20 px-4 pb-8 min-h-screen"
+        className="flex items-center justify-center min-h-full"
         onClick={handleBackdropClick}
       >
         {/* Backdrop con overlay más sutil */}
         <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" />
         
         {/* Modal */}
-        <div className={`relative w-full ${sizes[size]} bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-100 opacity-100 max-h-fit`}>
+        <div className={`relative w-full ${sizes[size]} bg-white rounded-2xl shadow-2xl transform transition-all duration-300 scale-100 opacity-100 max-h-[90vh] flex flex-col`}>
           {/* Header */}
           {title && (
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
@@ -56,7 +56,7 @@ export const Modal: React.FC<ModalProps> = ({
           )}
           
           {/* Content */}
-          <div className="px-6 py-6 max-h-96 overflow-y-auto">
+          <div className="px-6 py-6 overflow-y-auto flex-1">
             {children}
           </div>
         </div>

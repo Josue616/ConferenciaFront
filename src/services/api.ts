@@ -1,47 +1,7 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
-
-// Mock data (para APIs que aún no están conectadas)
-const mockUsers: User[] = [
-  {
-    dni: '12345678',
-    nombres: 'Administrador Principal',
-    sexo: true,
-    fechaNacimiento: '1990-01-01',
-    telefono: '987654321',
-    rol: 'Admin',
-    region: { id: '44e2846d-0e56-4aca-88ca-1b02bd66c2e3', nombres: 'Lima' }
-  },
-  {
-    dni: '11223344',
-    nombres: 'María González',
-    sexo: false,
-    fechaNacimiento: '1992-07-22',
-    telefono: '923456789',
-    rol: 'Oyente',
-    region: { id: 'bf941000-4cb1-472e-b011-08759990654c', nombres: 'Arequipa' }
-  },
-  {
-    dni: '55667788',
-    nombres: 'Carlos Mendoza',
-    sexo: true,
-    fechaNacimiento: '1988-03-15',
-    telefono: '945123678',
-    rol: 'Encargado',
-    region: { id: '7f8e5d2a-3b4c-4a5d-8e2f-1a2b3c4d5e6f', nombres: 'Cusco' }
-  },
-  {
-    dni: '99887766',
-    nombres: 'Ana Torres',
-    sexo: false,
-    fechaNacimiento: '1995-11-08',
-    telefono: '912345987',
-    rol: 'Oyente',
-    region: { id: '44e2846d-0e56-4aca-88ca-1b02bd66c2e3', nombres: 'Lima' }
-  }
-];
 
 const mockConferences: Conference[] = [
   {
@@ -84,21 +44,21 @@ const mockParticipations: Participation[] = [
     dniUsuario: '11223344',
     idConferencia: '339ce11a-68aa-4580-975c-3a138ddc5e79',
     fecha: '2025-01-15T10:30:00.000Z',
-    usuario: mockUsers[1],
+    usuario: {} as User, // Will be populated from API
     conferencia: mockConferences[0]
   },
   {
     dniUsuario: '99887766',
     idConferencia: '339ce11a-68aa-4580-975c-3a138ddc5e79',
     fecha: '2025-01-16T14:20:00.000Z',
-    usuario: mockUsers[3],
+    usuario: {} as User, // Will be populated from API
     conferencia: mockConferences[0]
   },
   {
     dniUsuario: '11223344',
     idConferencia: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     fecha: '2025-01-18T09:15:00.000Z',
-    usuario: mockUsers[1],
+    usuario: {} as User, // Will be populated from API
     conferencia: mockConferences[1]
   }
 ];
@@ -271,8 +231,70 @@ export const conferencesApi = {
 // Users API
 export const usersApi = {
   getAll: async (): Promise<User[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockUsers];
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Usuarios`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener usuarios');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  create: async (user: UserRequest): Promise<User> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Usuarios`, {
+        method: 'POST',
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear usuario');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+
+  update: async (dni: string, user: Omit<UserRequest, 'dni'>): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Usuarios/${dni}`, {
+        method: 'PUT',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar usuario');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
   }
 };
 
