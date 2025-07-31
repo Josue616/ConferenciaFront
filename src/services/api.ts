@@ -511,6 +511,26 @@ export const participationsApi = {
       console.error('Error creating participation:', error);
       throw error;
     }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Participaciones/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar participación');
+      }
+    } catch (error) {
+      console.error('Error deleting participation:', error);
+      throw error;
+    }
   }
 };
 

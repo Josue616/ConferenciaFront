@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, User as UserIcon, Calendar as CalendarIcon } from 'lucide-react';
+import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Participation, ParticipationRequest, Conference, Region, User } from '../../types';
@@ -19,11 +20,14 @@ export const ParticipationsModule: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedConference, setSelectedConference] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [participationToDelete, setParticipationToDelete] = useState<Participation | null>(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<ParticipationRequest>({
     dniUsuario: '',
@@ -97,6 +101,30 @@ export const ParticipationsModule: React.FC = () => {
       setError('Error al crear la participación. Por favor, intenta nuevamente.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (participation: Participation) => {
+    setParticipationToDelete(participation);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!participationToDelete) return;
+    
+    setDeleting(true);
+    setError('');
+    
+    try {
+      await participationsApi.delete(participationToDelete.id);
+      await loadData();
+      setIsDeleteDialogOpen(false);
+      setParticipationToDelete(null);
+    } catch (error) {
+      console.error('Error deleting participation:', error);
+      setError('Error al eliminar la participación. Por favor, intenta nuevamente.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -219,6 +247,9 @@ export const ParticipationsModule: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -260,6 +291,15 @@ export const ParticipationsModule: React.FC = () => {
                     <Badge variant="success">
                       Inscrito
                     </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => handleDelete(participation)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    />
                   </td>
                 </tr>
               ))}
@@ -393,6 +433,19 @@ export const ParticipationsModule: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar Participación"
+        message={`¿Estás seguro de que deseas eliminar la participación de "${participationToDelete?.nombreUsuario}" en "${participationToDelete?.nombreConferencia}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 };
