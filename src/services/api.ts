@@ -537,7 +537,92 @@ export const participationsApi = {
 // Payments API
 export const paymentsApi = {
   getAll: async (): Promise<Payment[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return [...mockPayments];
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener pagos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      throw error;
+    }
+  },
+
+  getByUser: async (dni: string): Promise<Payment[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos/usuario/${dni}`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener pagos del usuario');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user payments:', error);
+      throw error;
+    }
+  },
+
+  getByRegion: async (regionId: string): Promise<Payment[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos/region/${regionId}`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener pagos de la región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching region payments:', error);
+      throw error;
+    }
+  },
+
+  create: async (dniUsuario: string, enlace: string): Promise<Payment> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos`, {
+        method: 'POST',
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          dniUsuario,
+          enlace
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al registrar el pago');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      throw error;
+    }
   }
 };

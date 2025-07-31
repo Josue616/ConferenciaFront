@@ -61,10 +61,9 @@ export interface ParticipationRequest {
 export interface Payment {
   id: string;
   dniUsuario: string;
+  nombreUsuario: string;
   enlace: string;
   fecha: string;
-  monto?: number;
-  estado?: 'Pendiente' | 'Completado' | 'Cancelado';
 }
 
 export interface AuthResponse {
