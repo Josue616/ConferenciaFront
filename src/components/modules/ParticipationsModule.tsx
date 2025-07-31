@@ -45,19 +45,26 @@ export const ParticipationsModule: React.FC = () => {
   const loadData = async () => {
     try {
       setError('');
-      const [participationsData, conferencesData, regionsData, usersData] = await Promise.all([
-        participationsApi.getAll(),
-        conferencesApi.getAll(),
-        regionsApi.getAll(),
-        usersApi.getAll()
-      ]);
+      
+      // Load data sequentially to better handle potential errors
+      const participationsData = await participationsApi.getAll();
       setParticipations(participationsData);
+      
+      const conferencesData = await conferencesApi.getAll();
       setConferences(conferencesData);
+      
+      const regionsData = await regionsApi.getAll();
       setRegions(regionsData);
+      
+      const usersData = await usersApi.getAll();
       setUsers(usersData);
     } catch (error) {
       console.error('Error loading data:', error);
-      setError('Error al cargar los datos. Por favor, intenta nuevamente.');
+      if (error instanceof Error) {
+        setError(`Error al cargar los datos: ${error.message}`);
+      } else {
+        setError('Error al cargar los datos. Verifica la conexión con el servidor.');
+      }
     } finally {
       setLoading(false);
     }
