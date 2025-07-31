@@ -313,13 +313,15 @@ export const UsersModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={Edit}
-                      onClick={() => handleEdit(user)}
-                      className="text-blue-600 hover:text-blue-700"
-                    />
+                    {(isAdmin || user.rol === 'Oyente') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={Edit}
+                        onClick={() => handleEdit(user)}
+                        className="text-blue-600 hover:text-blue-700"
+                      />
+                    )}
                   </td>
                 </tr>
               ))}
