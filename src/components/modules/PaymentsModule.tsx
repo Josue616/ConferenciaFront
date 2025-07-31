@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Payment, User as UserType, Region } from '../../types';
@@ -39,10 +40,15 @@ export const PaymentsModule: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState('');
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -141,6 +147,35 @@ export const PaymentsModule: React.FC = () => {
     }
   };
 
+  const handleViewImage = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+    setIsImageModalOpen(true);
+  };
+
+  const handleDelete = (payment: Payment) => {
+    setPaymentToDelete(payment);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!paymentToDelete) return;
+    
+    setDeleting(true);
+    setError('');
+    
+    try {
+      await paymentsApi.delete(paymentToDelete.id);
+      await loadData();
+      setIsDeleteDialogOpen(false);
+      setPaymentToDelete(null);
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      setError('Error al eliminar el pago. Por favor, intenta nuevamente.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleCloseUploadModal = () => {
     setIsUploadModalOpen(false);
     setSelectedUser('');
@@ -166,6 +201,12 @@ export const PaymentsModule: React.FC = () => {
     if (!user) return 'Desconocida';
     const region = regions.find(r => r.id === user.idRegion);
     return region?.nombres || 'Desconocida';
+  };
+
+  const isImageUrl = (url: string) => {
+    return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) || 
+           url.includes('cloudinary.com') || 
+           url.includes('res.cloudinary.com');
   };
 
   if (loading) {
@@ -247,6 +288,9 @@ export const PaymentsModule: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Comprobante
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -280,14 +324,34 @@ export const PaymentsModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    {isImageUrl(payment.enlace) ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Eye}
+                        onClick={() => handleViewImage(payment.enlace)}
+                      >
+                        Ver Imagen
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={ExternalLink}
+                        onClick={() => window.open(payment.enlace, '_blank')}
+                      >
+                        Ver Enlace
+                      </Button>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <Button
-                      variant="secondary"
+                      variant="ghost"
                       size="sm"
-                      icon={ExternalLink}
-                      onClick={() => window.open(payment.enlace, '_blank')}
-                    >
-                      Ver Comprobante
-                    </Button>
+                      icon={Trash2}
+                      onClick={() => handleDelete(payment)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    />
                   </td>
                 </tr>
               ))}
@@ -447,6 +511,60 @@ export const PaymentsModule: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Image Viewer Modal */}
+      <Modal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        title="Comprobante de Pago"
+        size="xl"
+      >
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <img
+              src={selectedImageUrl}
+              alt="Comprobante de pago"
+              className="max-w-full max-h-96 object-contain rounded-lg shadow-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'text-center py-8 text-gray-500';
+                errorDiv.innerHTML = '<p>No se pudo cargar la imagen</p>';
+                target.parentNode?.appendChild(errorDiv);
+              }}
+            />
+          </div>
+          <div className="flex justify-center space-x-3">
+            <Button
+              variant="secondary"
+              icon={ExternalLink}
+              onClick={() => window.open(selectedImageUrl, '_blank')}
+            >
+              Abrir en nueva pestaña
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsImageModalOpen(false)}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar Pago"
+        message={`¿Estás seguro de que deseas eliminar el pago de "${paymentToDelete?.nombreUsuario}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 };

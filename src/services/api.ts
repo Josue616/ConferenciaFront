@@ -624,5 +624,25 @@ export const paymentsApi = {
       console.error('Error creating payment:', error);
       throw error;
     }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el pago');
+      }
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      throw error;
+    }
   }
 };
