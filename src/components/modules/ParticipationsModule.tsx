@@ -67,9 +67,10 @@ export const ParticipationsModule: React.FC = () => {
     
     const matchesConference = !selectedConference || participation.idConferencia === selectedConference;
     
-    // Para filtrar por región, necesitamos encontrar la conferencia y su región
+    // Para Admins: filtrar por región si está seleccionada
+    // Para Encargados: la API ya filtra por región, no aplicar filtro adicional
     let matchesRegion = true;
-    if (selectedRegion) {
+    if (isAdmin && selectedRegion) {
       const conference = conferences.find(c => c.id === participation.idConferencia);
       matchesRegion = conference ? conference.idRegion === selectedRegion : false;
     }
@@ -214,8 +215,9 @@ export const ParticipationsModule: React.FC = () => {
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+              disabled={!isAdmin}
             >
-              <option value="">Todas las regiones</option>
+              <option value="">{isAdmin ? 'Todas las regiones' : 'Mi región'}</option>
               {regions.map(region => (
                 <option key={region.id} value={region.id}>
                   {region.nombres}
