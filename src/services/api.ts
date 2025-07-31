@@ -356,6 +356,50 @@ export const regionsApi = {
       console.error('Error fetching regions:', error);
       throw error;
     }
+  },
+
+  create: async (nombres: string): Promise<Region> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Regiones`, {
+        method: 'POST',
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nombres })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating region:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Regiones/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar región');
+      }
+    } catch (error) {
+      console.error('Error deleting region:', error);
+      throw error;
+    }
   }
 };
 
