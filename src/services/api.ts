@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, ParticipationRequest } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
@@ -330,6 +330,26 @@ export const usersApi = {
       }
     } catch (error) {
       console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  delete: async (dni: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Usuarios/${dni}`, {
+        method: 'DELETE',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar usuario');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
       throw error;
     }
   }

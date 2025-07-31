@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User as UserIcon, UserX } from 'lucide-react';
+import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User as UserIcon, UserX, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { User, Region, UserRequest } from '../../types';
 import { usersApi, regionsApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,6 +28,8 @@ export const UsersModule: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [error, setError] = useState('');
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState<UserRequest>({
     dni: '',
     nombres: '',
@@ -115,7 +118,7 @@ export const UsersModule: React.FC = () => {
       fechaNacimiento: formatDateForInput(user.fechaNacimiento),
       telefono: user.telefono,
       rol: user.rol,
-      password: user.password,
+      password: user.password || null,
       idRegion: user.idRegion
     });
     setIsModalOpen(true);
@@ -135,6 +138,35 @@ export const UsersModule: React.FC = () => {
       password: null,
       idRegion: ''
     });
+  };
+
+  const handleDeleteClick = (user: User) => {
+    setDeletingUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingUser) return;
+    
+    setSubmitting(true);
+    setError('');
+    
+    try {
+      await usersApi.delete(deletingUser.dni);
+      await loadData();
+      setIsDeleteDialogOpen(false);
+      setDeletingUser(null);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setError('Error al eliminar el usuario. Por favor, intenta nuevamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteDialogOpen(false);
+    setDeletingUser(null);
   };
 
   const getRoleBadgeVariant = (rol: string) => {
@@ -313,15 +345,26 @@ export const UsersModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {(isAdmin || user.rol === 'Oyente') && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Edit}
-                        onClick={() => handleEdit(user)}
-                        className="text-blue-600 hover:text-blue-700"
-                      />
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {(isAdmin || user.rol === 'Oyente') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Edit}
+                          onClick={() => handleEdit(user)}
+                          className="text-blue-600 hover:text-blue-700"
+                        />
+                      )}
+                      {isAdmin && user.rol !== 'Admin' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
+                          onClick={() => handleDeleteClick(user)}
+                          className="text-red-600 hover:text-red-700"
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -512,6 +555,23 @@ export const UsersModule: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Eliminar Usuario"
+        message={
+          deletingUser 
+            ? `¿Estás seguro de que deseas eliminar al usuario "${deletingUser.nombres}" (DNI: ${deletingUser.dni})? Esta acción no se puede deshacer.`
+            : "¿Estás seguro de que deseas eliminar este usuario?"
+        }
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        loading={submitting}
+      />
     </div>
   );
 };
