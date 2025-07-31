@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -14,6 +15,9 @@ import { participationsApi, conferencesApi, regionsApi, usersApi } from '../../s
 const ITEMS_PER_PAGE = 10;
 
 export const ParticipationsModule: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.rol === 'Admin';
+  
   const [participations, setParticipations] = useState<Participation[]>([]);
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
