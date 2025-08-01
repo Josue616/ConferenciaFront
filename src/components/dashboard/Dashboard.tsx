@@ -46,69 +46,6 @@ export const Dashboard: React.FC = () => {
           <RecentActivity />
         </div>
         <div className="space-y-6">
-          {/* Quick Actions */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Acciones Rápidas</h3>
-              <TrendingUp className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="space-y-3">
-              {user?.rol === 'Admin' && (
-                <button className="w-full text-left px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg hover:from-blue-100 hover:to-purple-100 transition-all duration-200 border border-blue-200">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Nueva Conferencia</div>
-                      <div className="text-xs text-gray-600">Crear una nueva conferencia</div>
-                    </div>
-                  </div>
-                </button>
-              )}
-              <button className="w-full text-left px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg hover:from-green-100 hover:to-emerald-100 transition-all duration-200 border border-green-200">
-                <div className="flex items-center space-x-3">
-                  <Users className="w-5 h-5 text-green-600" />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Gestionar Usuarios</div>
-                    <div className="text-xs text-gray-600">Administrar usuarios del sistema</div>
-                  </div>
-                </div>
-              </button>
-              <button className="w-full text-left px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg hover:from-purple-100 hover:to-pink-100 transition-all duration-200 border border-purple-200">
-                <div className="flex items-center space-x-3">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Ver Reportes</div>
-                    <div className="text-xs text-gray-600">Analizar datos del sistema</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </Card>
-
-          {/* System Status */}
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado del Sistema</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Servidor</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">
-                  Activo
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Base de Datos</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">
-                  Conectada
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">API Reportes</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800">
-                  Operativa
-                </span>
-              </div>
-            </div>
-          </Card>
 
           {/* Inspirational Quote */}
           <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
