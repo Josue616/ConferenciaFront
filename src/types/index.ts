@@ -63,6 +63,8 @@ export interface Payment {
   id: string;
   dniUsuario: string;
   nombreUsuario: string;
+  idConferencia: string;
+  nombreConferencia: string;
   enlace: string;
   fecha: string;
 }

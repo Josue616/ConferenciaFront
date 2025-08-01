@@ -8,7 +8,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Payment, User as UserType, Region } from '../../types';
-import { paymentsApi, regionsApi } from '../../services/api';
+import { paymentsApi, regionsApi, conferencesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserSearchSelect } from '../ui/UserSearchSelect';
 
@@ -36,6 +36,7 @@ const uploadImageToCloudinary = async (file: File): Promise<string> => {
 export const PaymentsModule: React.FC = () => {
   const { isAdmin } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [conferences, setConferences] = useState<Conference[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -50,6 +51,7 @@ export const PaymentsModule: React.FC = () => {
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
   const [selectedUser, setSelectedUser] = useState('');
+  const [selectedConference, setSelectedConference] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
@@ -67,6 +69,10 @@ export const PaymentsModule: React.FC = () => {
       // Load payments
       const paymentsData = await paymentsApi.getAll();
       setPayments(paymentsData);
+      
+      // Load conferences
+      const conferencesData = await conferencesApi.getAll();
+      setConferences(conferencesData);
       
       // Load regions
       const regionsData = await regionsApi.getAll();
@@ -142,7 +148,7 @@ export const PaymentsModule: React.FC = () => {
   };
 
   const handleUploadAndRegister = async () => {
-    if (!selectedFile || !selectedUser) return;
+    if (!selectedFile || !selectedUser || !selectedConference) return;
     
     setUploading(true);
     setError('');
@@ -153,7 +159,7 @@ export const PaymentsModule: React.FC = () => {
       setUploadedImageUrl(imageUrl);
       
       // Step 2: Register payment in API
-      await paymentsApi.create(selectedUser, imageUrl);
+      await paymentsApi.create(selectedUser, selectedConference, imageUrl);
       
       setUploadSuccess(true);
       await loadData(); // Reload payments
@@ -203,6 +209,7 @@ export const PaymentsModule: React.FC = () => {
   const handleCloseUploadModal = () => {
     setIsUploadModalOpen(false);
     setSelectedUser('');
+    setSelectedConference('');
     setSelectedFile(null);
     setPreviewUrl('');
     setUploadedImageUrl('');
@@ -302,6 +309,9 @@ export const PaymentsModule: React.FC = () => {
                   Usuario
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Conferencia
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Región
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -331,6 +341,14 @@ export const PaymentsModule: React.FC = () => {
                           DNI: {payment.dniUsuario}
                         </div>
                       </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                      {payment.nombreConferencia}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ID: {payment.idConferencia.slice(-8)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -508,13 +526,34 @@ export const PaymentsModule: React.FC = () => {
               disabled={uploading}
               className="w-full sm:w-auto"
             >
+            {/* Conference Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Conferencia <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedConference}
+                onChange={(e) => setSelectedConference(e.target.value)}
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                required
+                disabled={uploading}
+              >
+                <option value="">Seleccionar conferencia</option>
+                {conferences.map(conference => (
+                  <option key={conference.id} value={conference.id}>
+                    {conference.nombres} - {conference.nombreRegion}
+                  </option>
+                ))}
+              </select>
+            </div>
+
               {uploadSuccess ? 'Cerrar' : 'Cancelar'}
             </Button>
             {!uploadSuccess && (
               <Button 
                 onClick={handleUploadAndRegister}
                 loading={uploading}
-                disabled={uploading || !selectedFile || !selectedUser}
+                disabled={uploading || !selectedFile || !selectedUser || !selectedConference}
                 icon={Upload}
                 className="w-full sm:w-auto"
               >
