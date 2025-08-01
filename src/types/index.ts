@@ -90,3 +90,115 @@ export interface ConferenceRequest {
   fechaFinIns: string;
   capacidad: number;
 }
+
+// Reports Types
+export interface UsersTotalReport {
+  totalGeneral: number;
+  porRegion: {
+    idRegion: string;
+    nombreRegion: string;
+    cantidadUsuarios: number;
+  }[];
+}
+
+export interface ParticipationWithPayment {
+  idParticipacion: string;
+  dniUsuario: string;
+  nombreUsuario: string;
+  idConferencia: string;
+  nombreConferencia: string;
+  regionConferencia: string;
+  fechaParticipacion: string;
+  tienePago: boolean;
+}
+
+export interface ConferenceParticipantsReport {
+  conferencia: {
+    id: string;
+    nombre: string;
+    region: string;
+  };
+  totalParticipantes: number;
+  conPago: number;
+  sinPago: number;
+  participantes: {
+    idParticipacion: string;
+    dniUsuario: string;
+    nombreUsuario: string;
+    fechaParticipacion: string;
+    tienePago: boolean;
+  }[];
+}
+
+export interface ParticipantsReport {
+  totalParticipantesUnicos: number;
+  totalParticipaciones: number;
+  participantes: {
+    dniUsuario: string;
+    nombreUsuario: string;
+    regionUsuario: string;
+    totalParticipaciones: number;
+    conferencias: {
+      idConferencia: string;
+      nombreConferencia: string;
+      regionConferencia: string;
+      fechaParticipacion: string;
+    }[];
+  }[];
+}
+
+export interface ParticipantsByRegionReport {
+  idRegion: string;
+  nombreRegion: string;
+  totalParticipantesUnicos: number;
+  totalParticipaciones: number;
+  participantes: {
+    dniUsuario: string;
+    nombreUsuario: string;
+    totalParticipaciones: number;
+    conferencias: {
+      idConferencia: string;
+      nombreConferencia: string;
+      fechaParticipacion: string;
+    }[];
+  }[];
+}
+
+export interface RegionParticipantsReport {
+  region: {
+    id: string;
+    nombre: string;
+  };
+  totalParticipantesUnicos: number;
+  totalParticipaciones: number;
+  participantes: {
+    dniUsuario: string;
+    nombreUsuario: string;
+    totalParticipaciones: number;
+    conferencias: {
+      idConferencia: string;
+      nombreConferencia: string;
+      regionConferencia: string;
+      fechaParticipacion: string;
+    }[];
+  }[];
+}
+
+export interface ConferenceRegionParticipantsReport {
+  conferencia: {
+    id: string;
+    nombre: string;
+    region: string;
+  };
+  totalParticipantes: number;
+  participantesPorRegion: {
+    idRegion: string;
+    nombreRegion: string;
+    cantidadParticipantes: number;
+    participantes: {
+      dniUsuario: string;
+      nombreUsuario: string;
+      fechaParticipacion: string;
+    }[];
+  }[];
+}

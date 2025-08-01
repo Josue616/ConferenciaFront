@@ -708,6 +708,177 @@ const downloadCSV = (csvContent: string, filename: string): void => {
   URL.revokeObjectURL(url);
 };
 
+// Reports API
+export const reportsApi = {
+  getUsersTotal: async (): Promise<UsersTotalReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/usuarios-total`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte de usuarios totales');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users total report:', error);
+      throw error;
+    }
+  },
+
+  getParticipationsWithPayments: async (): Promise<ParticipationWithPayment[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participaciones-con-pagos`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participaciones con pagos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching participations with payments:', error);
+      throw error;
+    }
+  },
+
+  getConferenceParticipants: async (conferenceId: string): Promise<ConferenceParticipantsReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participaciones-con-pagos/conferencia/${conferenceId}`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participantes de conferencia');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching conference participants:', error);
+      throw error;
+    }
+  },
+
+  getParticipantsReport: async (): Promise<ParticipantsReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participantes-conferencias`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte de participantes');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching participants report:', error);
+      throw error;
+    }
+  },
+
+  getParticipantsByRegion: async (): Promise<ParticipantsByRegionReport[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participantes-por-region`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participantes por región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching participants by region:', error);
+      throw error;
+    }
+  },
+
+  getRegionParticipants: async (regionId: string): Promise<RegionParticipantsReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participantes-por-region/${regionId}`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participantes de región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching region participants:', error);
+      throw error;
+    }
+  },
+
+  getConferenceRegionParticipants: async (conferenceId: string): Promise<ConferenceRegionParticipantsReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/participantes-conferencia/${conferenceId}/por-region`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participantes de conferencia por región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching conference region participants:', error);
+      throw error;
+    }
+  },
+
+  getUsersByRegion: async (regionId: string): Promise<User[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Reportes/usuarios-por-region/${regionId}`, {
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener usuarios por región');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users by region:', error);
+      throw error;
+    }
+  }
+};
+
 // Payments API
 export const paymentsApi = {
   getAll: async (): Promise<Payment[]> => {
