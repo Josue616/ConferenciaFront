@@ -3,41 +3,6 @@ import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Pa
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
 
-const mockConferences: Conference[] = [
-  {
-    id: '339ce11a-68aa-4580-975c-3a138ddc5e79',
-    nombres: 'Conferencia de Tecnología Lima 2025',
-    idRegion: '44e2846d-0e56-4aca-88ca-1b02bd66c2e3',
-    nombreRegion: 'Lima',
-    fechaInicio: '2025-08-15',
-    fechaFin: '2025-08-17',
-    fechaFinIns: '2025-08-10',
-    capacidad: 100,
-    participantesInscritos: 2
-  },
-  {
-    id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    nombres: 'Simposio Empresarial Arequipa',
-    idRegion: 'bf941000-4cb1-472e-b011-08759990654c',
-    nombreRegion: 'Arequipa',
-    fechaInicio: '2025-09-10',
-    fechaFin: '2025-09-12',
-    fechaFinIns: '2025-09-05',
-    capacidad: 80,
-    participantesInscritos: 1
-  },
-  {
-    id: 'f9e8d7c6-b5a4-3210-9876-543210fedcba',
-    nombres: 'Congreso de Innovación Cusco',
-    idRegion: '7f8e5d2a-3b4c-4a5d-8e2f-1a2b3c4d5e6f',
-    nombreRegion: 'Cusco',
-    fechaInicio: '2025-10-20',
-    fechaFin: '2025-10-22',
-    fechaFinIns: '2025-10-15',
-    capacidad: 60,
-    participantesInscritos: 0
-  }
-];
 
 const mockUsers: User[] = [
   {

@@ -43,6 +43,7 @@ export interface Conference {
   fechaFinIns: string;
   capacidad: number;
   participantesInscritos: number;
+  estaVigente: boolean;
 }
 
 export interface Participation {

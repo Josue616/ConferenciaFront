@@ -22,10 +22,21 @@ export const RecentActivity: React.FC = () => {
     try {
       setError('');
       
-      const [participationsData, regionsData] = await Promise.all([
-        reportsApi.getParticipationsWithPayments(),
-        reportsApi.getParticipantsByRegion()
-      ]);
+      // Load data with individual error handling
+      let participationsData = [];
+      let regionsData = [];
+
+      try {
+        participationsData = await reportsApi.getParticipationsWithPayments();
+      } catch (error) {
+        console.warn('Error loading participations with payments:', error);
+      }
+
+      try {
+        regionsData = await reportsApi.getParticipantsByRegion();
+      } catch (error) {
+        console.warn('Error loading participants by region:', error);
+      }
 
       // Sort by date and take the most recent 5
       const sortedParticipations = participationsData
@@ -37,7 +48,7 @@ export const RecentActivity: React.FC = () => {
 
     } catch (error) {
       console.error('Error loading activity data:', error);
-      setError('Error al cargar la actividad reciente');
+      setError('Error al cargar algunos datos de actividad. Algunos reportes pueden no estar disponibles.');
     } finally {
       setLoading(false);
     }

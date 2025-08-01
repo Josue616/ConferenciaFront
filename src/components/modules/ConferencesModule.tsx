@@ -237,8 +237,8 @@ export const ConferencesModule: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between pt-2">
-                <Badge variant={conference.participantesInscritos >= conference.capacidad ? 'danger' : 'success'}>
-                  {conference.participantesInscritos >= conference.capacidad ? 'Completa' : 'Disponible'}
+                <Badge variant={!conference.estaVigente ? 'secondary' : conference.participantesInscritos >= conference.capacidad ? 'danger' : 'success'}>
+                  {!conference.estaVigente ? 'No Vigente' : conference.participantesInscritos >= conference.capacidad ? 'Completa' : 'Disponible'}
                 </Badge>
                 <span className="text-xs text-gray-500">
                   Hasta: {formatDateForDisplay(conference.fechaFinIns)}

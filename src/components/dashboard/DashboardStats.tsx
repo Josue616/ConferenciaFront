@@ -74,18 +74,35 @@ export const DashboardStats: React.FC = () => {
     try {
       setError('');
       
-      // Load all reports in parallel
-      const [
-        usersData,
-        participantsData,
-        conferencesData,
-        participationsWithPayments
-      ] = await Promise.all([
-        reportsApi.getUsersTotal(),
-        reportsApi.getParticipantsReport(),
-        conferencesApi.getAll(),
-        reportsApi.getParticipationsWithPayments()
-      ]);
+      // Load data with error handling for each endpoint
+      let usersData = null;
+      let participantsData = null;
+      let conferencesData = [];
+      let participationsWithPayments = [];
+
+      try {
+        usersData = await reportsApi.getUsersTotal();
+      } catch (error) {
+        console.warn('Error loading users total:', error);
+      }
+
+      try {
+        participantsData = await reportsApi.getParticipantsReport();
+      } catch (error) {
+        console.warn('Error loading participants report:', error);
+      }
+
+      try {
+        conferencesData = await conferencesApi.getAll();
+      } catch (error) {
+        console.warn('Error loading conferences:', error);
+      }
+
+      try {
+        participationsWithPayments = await reportsApi.getParticipationsWithPayments();
+      } catch (error) {
+        console.warn('Error loading participations with payments:', error);
+      }
 
       setUsersReport(usersData);
       setParticipantsReport(participantsData);
@@ -98,7 +115,7 @@ export const DashboardStats: React.FC = () => {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setError('Error al cargar los datos del dashboard');
+      setError('Error al cargar algunos datos del dashboard. Algunos reportes pueden no estar disponibles.');
     } finally {
       setLoading(false);
     }
