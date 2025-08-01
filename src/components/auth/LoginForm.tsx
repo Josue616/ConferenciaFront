@@ -1,9 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LogIn, User, Lock, Eye, EyeOff, Heart, Calendar } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { authApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+
+// CSS Animations - movido fuera del componente para evitar regeneración
+const animationStyles = `
+  @keyframes floatContinuous {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-15px) rotate(120deg); }
+    66% { transform: translateY(-8px) rotate(240deg); }
+  }
+  
+  @keyframes rotateContinuous {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes pulseContinuous {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+  }
+  
+  @keyframes slideInDown {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideInUp {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .float-particle {
+    animation: floatContinuous 6s ease-in-out infinite;
+  }
+  
+  .rotate-shape {
+    animation: rotateContinuous 20s linear infinite;
+  }
+  
+  .pulse-glow {
+    animation: pulseContinuous 3s ease-in-out infinite;
+  }
+  
+  .slide-down {
+    animation: slideInDown 0.8s ease-out forwards;
+  }
+  
+  .slide-up {
+    animation: slideInUp 0.8s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+  
+  .shake-error {
+    animation: shake 0.6s ease-in-out;
+  }
+  
+  .gradient-bg {
+    background: linear-gradient(-45deg, #1e3a8a, #3730a3, #6366f1, #8b5cf6);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+  
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .input-glow:focus {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  }
+`;
 
 export const LoginForm: React.FC = () => {
   const [credentials, setCredentials] = useState({ dni: '', password: '' });
@@ -11,6 +93,16 @@ export const LoginForm: React.FC = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+
+  // Generar posiciones de partículas solo una vez usando useMemo
+  const particles = useMemo(() => {
+    return Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 6,
+    }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,100 +121,21 @@ export const LoginForm: React.FC = () => {
 
   return (
     <>
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes floatContinuous {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-15px) rotate(120deg); }
-          66% { transform: translateY(-8px) rotate(240deg); }
-        }
-        
-        @keyframes rotateContinuous {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulseContinuous {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.1); }
-        }
-        
-        @keyframes slideInDown {
-          0% { opacity: 0; transform: translateY(-30px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideInUp {
-          0% { opacity: 0; transform: translateY(30px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-8px); }
-          75% { transform: translateX(8px); }
-        }
-        
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        .float-particle {
-          animation: floatContinuous 6s ease-in-out infinite;
-        }
-        
-        .rotate-shape {
-          animation: rotateContinuous 20s linear infinite;
-        }
-        
-        .pulse-glow {
-          animation: pulseContinuous 3s ease-in-out infinite;
-        }
-        
-        .slide-down {
-          animation: slideInDown 0.8s ease-out forwards;
-        }
-        
-        .slide-up {
-          animation: slideInUp 0.8s ease-out 0.3s forwards;
-          opacity: 0;
-        }
-        
-        .shake-error {
-          animation: shake 0.6s ease-in-out;
-        }
-        
-        .gradient-bg {
-          background: linear-gradient(-45deg, #1e3a8a, #3730a3, #6366f1, #8b5cf6);
-          background-size: 400% 400%;
-          animation: gradientShift 15s ease infinite;
-        }
-        
-        .glass-effect {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .input-glow:focus {
-          box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-        }
-      `}</style>
+      {/* CSS Animations - Definido una sola vez */}
+      <style>{animationStyles}</style>
 
       <div className="min-h-screen relative overflow-hidden gradient-bg">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          {/* Floating Particles */}
-          {[...Array(15)].map((_, i) => (
+          {/* Floating Particles - Posiciones fijas usando useMemo */}
+          {particles.map((particle) => (
             <div
-              key={`particle-${i}`}
+              key={`particle-${particle.id}`}
               className="absolute w-2 h-2 bg-white rounded-full float-particle pulse-glow"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 6}s`,
+                left: `${particle.left}%`,
+                top: `${particle.top}%`,
+                animationDelay: `${particle.delay}s`,
               }}
             />
           ))}
