@@ -241,22 +241,23 @@ export const LoginForm: React.FC = () => {
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-5px); }
-            className="absolute w-2 h-2 bg-white bg-opacity-20 rounded-full"
+          75% { transform: translateX(5px); }
         }
 
         .animate-fade-in-down {
-              animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 3}s`
+          animation: \fade-in-down 0.8s ease-out forwards;
+          opacity: 0;
+        }
 
         .animate-fade-in-up {
           animation: fade-in-up 0.8s ease-out forwards;
           opacity: 0;
         }
 
-      <div className="absolute top-20 left-20 w-32 h-32 border border-white border-opacity-10 rounded-full" style={{ animation: 'rotate 20s linear infinite' }} />
-      <div className="absolute bottom-20 right-20 w-24 h-24 border border-white border-opacity-10 rounded-lg" style={{ animation: 'float 4s ease-in-out infinite' }} />
-      <div className="absolute top-1/2 left-10 w-16 h-16 bg-white bg-opacity-5 rounded-full" style={{ animation: 'pulse 3s ease-in-out infinite' }} />
-      <div className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-400 opacity-10 rounded-full" style={{ animation: 'pulse 4s ease-in-out infinite' }} />
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };
