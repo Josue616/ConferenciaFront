@@ -272,10 +272,6 @@ export const LoginForm: React.FC = () => {
 
                 {/* Footer */}
                 <div className="mt-8 text-center">
-                  <div className="flex items-center justify-center space-x-2 text-blue-200 text-sm mb-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Sistema de Conferencias Cristianas</span>
-                  </div>
                   <p className="text-blue-300 text-xs opacity-75">
                     "Donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos"
                   </p>
