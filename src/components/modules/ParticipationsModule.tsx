@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Participation, ParticipationRequest, Conference, Region, User } from '../../types';
-import { participationsApi, conferencesApi, regionsApi } from '../../services/api';
+import { participationsApi, conferencesApi, regionsApi, csvExportApi } from '../../services/api';
 import { UserSearchSelect } from '../ui/UserSearchSelect';
 
 const ITEMS_PER_PAGE = 10;
@@ -32,6 +32,7 @@ export const ParticipationsModule: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [participationToDelete, setParticipationToDelete] = useState<Participation | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<ParticipationRequest>({
     dniUsuario: '',
@@ -147,6 +148,20 @@ export const ParticipationsModule: React.FC = () => {
     });
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    setError('');
+    
+    try {
+      await csvExportApi.exportParticipations();
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      setError('Error al exportar los datos. Por favor, intenta nuevamente.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getConferenceRegion = (conferenceId: string) => {
     const conference = conferences.find(c => c.id === conferenceId);
     return conference ? conference.nombreRegion : 'Desconocida';
@@ -178,9 +193,20 @@ export const ParticipationsModule: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Participaciones</h1>
           <p className="text-gray-600">Gestiona las participaciones en conferencias</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
-          Nueva Participación
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            onClick={handleExportCSV}
+            variant="secondary"
+            icon={Download}
+            loading={exporting}
+            disabled={exporting}
+          >
+            {exporting ? 'Exportando...' : 'Exportar CSV'}
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
+            Nueva Participación
+          </Button>
+        </div>
       </div>
 
       {/* Error Alert */}

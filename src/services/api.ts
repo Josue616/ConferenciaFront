@@ -584,6 +584,130 @@ export const participationsApi = {
   }
 };
 
+// CSV Export utilities
+export const csvExportApi = {
+  exportParticipations: async (): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // Get all participations
+      const participations = await participationsApi.getAll();
+      
+      // Get detailed user info for each participation
+      const participationsWithDetails = await Promise.all(
+        participations.map(async (participation) => {
+          try {
+            const userResponse = await fetch(`${API_BASE_URL}/Usuarios/${participation.dniUsuario}`, {
+              headers: {
+                'accept': 'text/plain',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              return {
+                ...participation,
+                userDetails: userData
+              };
+            } else {
+              return {
+                ...participation,
+                userDetails: null
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching user ${participation.dniUsuario}:`, error);
+            return {
+              ...participation,
+              userDetails: null
+            };
+          }
+        })
+      );
+      
+      // Generate CSV content
+      const csvContent = generateParticipationsCSV(participationsWithDetails);
+      
+      // Download CSV file
+      downloadCSV(csvContent, 'participaciones_completo.csv');
+      
+    } catch (error) {
+      console.error('Error exporting participations:', error);
+      throw error;
+    }
+  }
+};
+
+const generateParticipationsCSV = (participations: any[]): string => {
+  // CSV Headers
+  const headers = [
+    'ID Participación',
+    'DNI Usuario',
+    'Nombre Completo',
+    'Sexo',
+    'Fecha Nacimiento',
+    'Teléfono',
+    'Rol Usuario',
+    'Región Usuario',
+    'ID Conferencia',
+    'Nombre Conferencia',
+    'Fecha Inscripción',
+    'Hora Inscripción'
+  ];
+  
+  // Generate CSV rows
+  const rows = participations.map(participation => {
+    const user = participation.userDetails;
+    const fechaInscripcion = new Date(participation.fecha);
+    
+    return [
+      participation.id,
+      participation.dniUsuario,
+      participation.nombreUsuario,
+      user ? (user.sexo ? 'Masculino' : 'Femenino') : 'N/A',
+      user ? new Date(user.fechaNacimiento).toLocaleDateString('es-ES') : 'N/A',
+      user ? user.telefono : 'N/A',
+      user ? user.rol : 'N/A',
+      user ? user.region.nombres : 'N/A',
+      participation.idConferencia,
+      participation.nombreConferencia,
+      fechaInscripcion.toLocaleDateString('es-ES'),
+      fechaInscripcion.toLocaleTimeString('es-ES')
+    ];
+  });
+  
+  // Combine headers and rows
+  const csvData = [headers, ...rows];
+  
+  // Convert to CSV string
+  return csvData.map(row => 
+    row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+};
+
+const downloadCSV = (csvContent: string, filename: string): void => {
+  // Add BOM for proper UTF-8 encoding in Excel
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  // Create download link
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Clean up
+  URL.revokeObjectURL(url);
+};
+
 // Payments API
 export const paymentsApi = {
   getAll: async (): Promise<Payment[]> => {
