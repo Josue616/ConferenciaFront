@@ -423,6 +423,36 @@ export const regionsApi = {
   }
 };
 
+// User Search API
+export const userSearchApi = {
+  search: async (nombre: string, idRegion?: string): Promise<User[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      let url = `${API_BASE_URL}/Usuarios/buscar?nombre=${encodeURIComponent(nombre)}`;
+      
+      if (idRegion) {
+        url += `&idRegion=${idRegion}`;
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al buscar usuarios');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching users:', error);
+      throw error;
+    }
+  }
+};
+
 // Participations API
 export const participationsApi = {
   getAll: async (): Promise<Participation[]> => {

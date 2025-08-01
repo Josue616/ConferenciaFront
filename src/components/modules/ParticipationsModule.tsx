@@ -10,7 +10,8 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Participation, ParticipationRequest, Conference, Region, User } from '../../types';
-import { participationsApi, conferencesApi, regionsApi, usersApi } from '../../services/api';
+import { participationsApi, conferencesApi, regionsApi } from '../../services/api';
+import { UserSearchSelect } from '../ui/UserSearchSelect';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -21,7 +22,6 @@ export const ParticipationsModule: React.FC = () => {
   const [participations, setParticipations] = useState<Participation[]>([]);
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -56,8 +56,6 @@ export const ParticipationsModule: React.FC = () => {
       const regionsData = await regionsApi.getAll();
       setRegions(regionsData);
       
-      const usersData = await usersApi.getAll();
-      setUsers(usersData);
     } catch (error) {
       console.error('Error loading data:', error);
       if (error instanceof Error) {
@@ -357,24 +355,14 @@ export const ParticipationsModule: React.FC = () => {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuario <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.dniUsuario}
-              onChange={(e) => setFormData(prev => ({ ...prev, dniUsuario: e.target.value }))}
-              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
-              required
-            >
-              <option value="">Seleccionar usuario</option>
-              {users.map(user => (
-                <option key={user.dni} value={user.dni}>
-                  {user.nombres} - {user.dni}
-                </option>
-              ))}
-            </select>
-          </div>
+          <UserSearchSelect
+            selectedUser={formData.dniUsuario}
+            onUserSelect={(dni) => setFormData(prev => ({ ...prev, dniUsuario: dni }))}
+            regions={regions}
+            placeholder="Buscar usuario por nombre..."
+            required
+            disabled={submitting}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
