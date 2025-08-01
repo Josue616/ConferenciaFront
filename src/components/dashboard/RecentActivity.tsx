@@ -199,28 +199,6 @@ export const RecentActivity: React.FC = () => {
         </Card>
       )}
 
-      {/* Quick Stats Summary */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Resumen Rápido</h3>
-          <Eye className="w-5 h-5 text-gray-400" />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">
-              {recentParticipations.filter(p => p.tienePago).length}
-            </p>
-            <p className="text-sm text-gray-600">Con Pago Reciente</p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg">
-            <p className="text-2xl font-bold text-orange-600">
-              {recentParticipations.filter(p => !p.tienePago).length}
-            </p>
-            <p className="text-sm text-gray-600">Pendientes de Pago</p>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };
