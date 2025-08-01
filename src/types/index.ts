@@ -7,6 +7,7 @@ export interface User {
   rol: 'Admin' | 'Encargado' | 'Oyente';
   password?: string;
   idRegion: string;
+  edad: number;
   region: {
     id: string;
     nombres: string;
