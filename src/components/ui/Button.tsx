@@ -21,10 +21,10 @@ export const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-900 focus:ring-gray-500',
+    primary: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white focus:ring-blue-500 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200',
+    secondary: 'bg-gradient-to-r from-gray-100 to-blue-50 hover:from-gray-200 hover:to-blue-100 text-gray-900 focus:ring-blue-500 border border-blue-200',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-    ghost: 'hover:bg-gray-100 text-gray-700 focus:ring-gray-500'
+    ghost: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 text-blue-700 focus:ring-blue-500'
   };
 
   const sizes = {

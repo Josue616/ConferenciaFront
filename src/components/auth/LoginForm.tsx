@@ -91,9 +91,6 @@ export const LoginForm: React.FC = () => {
             <Card className="backdrop-blur-lg bg-white/10 border-white/20 shadow-2xl">
               <div className="p-8">
                 <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4 shadow-lg">
-                    <LogIn className="w-8 h-8 text-white" />
-                  </div>
                   <h2 className="text-2xl font-bold text-white mb-2">Bienvenido</h2>
                   <p className="text-blue-200">Inicia sesión para continuar</p>
                 </div>
@@ -149,7 +146,6 @@ export const LoginForm: React.FC = () => {
                       </button>
                     </div>
                   </div>
-
                   {/* Error Message */}
                   {error && (
                     <div className="animate-shake bg-red-500/20 border border-red-400/30 rounded-xl p-4 backdrop-blur-sm">
@@ -193,6 +189,33 @@ export const LoginForm: React.FC = () => {
 
       {/* Custom Styles */}
       <style jsx>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes rotate {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.4;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+
         @keyframes fade-in-down {
           0% {
             opacity: 0;
@@ -218,22 +241,22 @@ export const LoginForm: React.FC = () => {
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
+            className="absolute w-2 h-2 bg-white bg-opacity-20 rounded-full"
         }
 
         .animate-fade-in-down {
-          animation: fade-in-down 0.8s ease-out forwards;
-        }
+              animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 3}s`
 
         .animate-fade-in-up {
           animation: fade-in-up 0.8s ease-out forwards;
           opacity: 0;
         }
 
-        .animate-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-      `}</style>
+      <div className="absolute top-20 left-20 w-32 h-32 border border-white border-opacity-10 rounded-full" style={{ animation: 'rotate 20s linear infinite' }} />
+      <div className="absolute bottom-20 right-20 w-24 h-24 border border-white border-opacity-10 rounded-lg" style={{ animation: 'float 4s ease-in-out infinite' }} />
+      <div className="absolute top-1/2 left-10 w-16 h-16 bg-white bg-opacity-5 rounded-full" style={{ animation: 'pulse 3s ease-in-out infinite' }} />
+      <div className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-400 opacity-10 rounded-full" style={{ animation: 'pulse 4s ease-in-out infinite' }} />
     </div>
   );
 };

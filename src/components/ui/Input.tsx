@@ -28,11 +28,12 @@ export const Input: React.FC<InputProps> = ({
         )}
         <input
           className={`
-            block w-full rounded-md border-gray-300 shadow-sm 
-            focus:ring-blue-500 focus:border-blue-500 
+            block w-full rounded-lg border-blue-200 shadow-sm bg-gradient-to-r from-white to-blue-50
+            focus:ring-blue-500 focus:border-blue-500 focus:bg-white
             ${icon ? 'pl-10' : 'pl-3'} pr-3 py-2
-            ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
+            ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : ''}
             ${className}
+            transition-all duration-200
           `}
           {...props}
         />

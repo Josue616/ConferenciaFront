@@ -45,7 +45,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <Sidebar
         currentView={currentView}
         onViewChange={handleViewChange}
