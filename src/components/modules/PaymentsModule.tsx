@@ -227,11 +227,6 @@ export const PaymentsModule: React.FC = () => {
     });
   };
 
-  const getUserRegion = (dni: string) => {
-    // This would need to be enhanced with additional API data
-    return 'Región'; // Placeholder since we don't have user region data in payments
-  };
-
   const isImageUrl = (url: string) => {
     return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url) || 
            url.includes('cloudinary.com') || 
@@ -312,9 +307,6 @@ export const PaymentsModule: React.FC = () => {
                   Conferencia
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Región
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -349,12 +341,6 @@ export const PaymentsModule: React.FC = () => {
                     </div>
                     <div className="text-sm text-gray-500">
                       ID: {payment.idConferencia.slice(-8)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {getUserRegion(payment.dniUsuario)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
