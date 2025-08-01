@@ -444,6 +444,27 @@ export const PaymentsModule: React.FC = () => {
                 disabled={uploading}
               />
 
+              {/* Conference Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Conferencia <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedConference}
+                  onChange={(e) => setSelectedConference(e.target.value)}
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                  required
+                  disabled={uploading}
+                >
+                  <option value="">Seleccionar conferencia</option>
+                  {conferences.map(conference => (
+                    <option key={conference.id} value={conference.id}>
+                      {conference.nombres} - {conference.nombreRegion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -504,7 +525,25 @@ export const PaymentsModule: React.FC = () => {
           )}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
+            {/* Left side - Status or info */}
+            <div className="flex-1">
+              {uploadSuccess && (
+                <div className="flex items-center text-green-600 text-sm">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  <span>Pago registrado exitosamente</span>
+                </div>
+              )}
+              {uploading && (
+                <div className="flex items-center text-blue-600 text-sm">
+                  <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2" />
+                  <span>Procesando pago...</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Right side - Action buttons */}
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <Button 
               type="button" 
               variant="secondary" 
@@ -512,40 +551,21 @@ export const PaymentsModule: React.FC = () => {
               disabled={uploading}
               className="w-full sm:w-auto"
             >
-            {/* Conference Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Conferencia <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedConference}
-                onChange={(e) => setSelectedConference(e.target.value)}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
-                required
-                disabled={uploading}
-              >
-                <option value="">Seleccionar conferencia</option>
-                {conferences.map(conference => (
-                  <option key={conference.id} value={conference.id}>
-                    {conference.nombres} - {conference.nombreRegion}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-              {uploadSuccess ? 'Cerrar' : 'Cancelar'}
-            </Button>
-            {!uploadSuccess && (
-              <Button 
-                onClick={handleUploadAndRegister}
-                loading={uploading}
-                disabled={uploading || !selectedFile || !selectedUser || !selectedConference}
-                icon={Upload}
-                className="w-full sm:w-auto"
-              >
-                {uploading ? 'Procesando...' : 'Subir y Registrar'}
+                {uploadSuccess ? 'Cerrar' : 'Cancelar'}
               </Button>
-            )}
+              {!uploadSuccess && (
+                <Button 
+                  onClick={handleUploadAndRegister}
+                  loading={uploading}
+                  disabled={uploading || !selectedFile || !selectedUser || !selectedConference}
+                  icon={Upload}
+                  className="w-full sm:w-auto min-w-[140px]"
+                >
+                  Subir y Registrar
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
