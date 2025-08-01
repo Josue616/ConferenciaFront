@@ -174,7 +174,7 @@ export const DashboardStats: React.FC = () => {
       </div>
 
       {/* Regional Breakdown */}
-      {usersReport && usersReport.porRegion.length > 0 && (
+      {usersReport && usersReport.porRegion?.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Usuarios por Región</h3>
