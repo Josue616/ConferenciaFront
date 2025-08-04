@@ -271,8 +271,11 @@ export const UsersModule: React.FC = () => {
         </div>
       </Card>
 
-      {/* Users Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+
+
+      {/* Users Tables - Stacked Layout */}
+      <div className="space-y-6">
         {/* Usuarios Masculinos */}
         <Card padding="sm">
           <div className="mb-4 flex items-center space-x-2">
@@ -286,16 +289,31 @@ export const UsersModule: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Usuario
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    DNI
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contacto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Región
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rol
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha Nac.
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Edad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Grupo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -303,40 +321,63 @@ export const UsersModule: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.filter(user => user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
                   <tr key={user.dni} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <UserIcon className="w-4 h-4 text-blue-600" />
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <UserIcon className="w-5 h-5 text-blue-600" />
                         </div>
-                        <div className="ml-3">
+                        <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {user.nombres}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {user.dni} • {user.edad} años
+                            Masculino
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {user.dni}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone className="w-4 h-4 mr-2" />
+                        {user.telefono}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2" />
                         {user.region.nombres}
                       </div>
-                      <Badge variant={getRoleBadgeVariant(user.rol)} size="xs">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant={getRoleBadgeVariant(user.rol)}>
                         {user.rol}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {formatDateForDisplay(user.fechaNacimiento)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {user.edad} años
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant={
                         user.grupoEdad === 'Infante' ? 'warning' :
                         user.grupoEdad === 'Niño' ? 'primary' :
                         user.grupoEdad === 'Adulto' ? 'success' : 'secondary'
-                      } size="xs">
+                      }>
                         {user.grupoEdad}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-1">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
                         {(isAdmin || user.rol === 'Oyente') && (
                           <Button
                             variant="ghost"
@@ -377,16 +418,31 @@ export const UsersModule: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Usuario
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    DNI
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contacto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Región
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rol
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha Nac.
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Edad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Grupo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -394,40 +450,63 @@ export const UsersModule: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredUsers.filter(user => !user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
                   <tr key={user.dni} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                          <UserX className="w-4 h-4 text-pink-600" />
+                        <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
+                          <UserX className="w-5 h-5 text-pink-600" />
                         </div>
-                        <div className="ml-3">
+                        <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {user.nombres}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {user.dni} • {user.edad} años
+                            Femenino
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {user.dni}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone className="w-4 h-4 mr-2" />
+                        {user.telefono}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2" />
                         {user.region.nombres}
                       </div>
-                      <Badge variant={getRoleBadgeVariant(user.rol)} size="xs">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant={getRoleBadgeVariant(user.rol)}>
                         {user.rol}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {formatDateForDisplay(user.fechaNacimiento)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {user.edad} años
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant={
                         user.grupoEdad === 'Infante' ? 'warning' :
                         user.grupoEdad === 'Niño' ? 'primary' :
                         user.grupoEdad === 'Adulto' ? 'success' : 'secondary'
-                      } size="xs">
+                      }>
                         {user.grupoEdad}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-1">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
                         {(isAdmin || user.rol === 'Oyente') && (
                           <Button
                             variant="ghost"
@@ -456,7 +535,7 @@ export const UsersModule: React.FC = () => {
         </Card>
       </div>
 
-      {/* Pagination - Shared for both tables */}
+      {/* Pagination */}
       <Card padding="sm">
         <Pagination
           currentPage={currentPage}
@@ -467,7 +546,7 @@ export const UsersModule: React.FC = () => {
         />
       </Card>
 
-      {/* Old single table - removed */}
+      {/* Single table - removed */}
       {false && <Card padding="sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
