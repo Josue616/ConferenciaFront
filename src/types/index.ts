@@ -54,6 +54,7 @@ export interface Participation {
   nombreUsuario: string;
   idConferencia: string;
   nombreConferencia: string;
+  servicio: string;
   fecha: string;
 }
 

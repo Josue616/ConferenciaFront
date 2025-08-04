@@ -145,7 +145,8 @@ export const ParticipationsModule: React.FC = () => {
     setError('');
     setFormData({
       dniUsuario: '',
-      idConferencia: ''
+      idConferencia: '',
+      servicio: 'Participante'
     });
   };
 
