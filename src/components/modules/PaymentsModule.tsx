@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X, Edit3, RotateCcw, Crop } from 'lucide-react';
+import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X, Edit3, RotateCcw, Crop as CropIcon } from 'lucide-react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Card } from '../ui/Card';
@@ -662,7 +662,7 @@ export const PaymentsModule: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-lg font-medium text-gray-900 flex items-center">
-                      <Crop className="w-5 h-5 mr-2" />
+                      <CropIcon className="w-5 h-5 mr-2" />
                       Editar Imagen
                     </h4>
                     <div className="flex space-x-2">
