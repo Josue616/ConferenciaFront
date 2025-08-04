@@ -57,6 +57,7 @@ export const PaymentsModule: React.FC = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
   useEffect(() => {
     loadData();
@@ -159,7 +160,7 @@ export const PaymentsModule: React.FC = () => {
       setUploadedImageUrl(imageUrl);
       
       // Step 2: Register payment in API
-      await paymentsApi.create(selectedUser, selectedConference, imageUrl);
+      await paymentsApi.create(selectedUser, selectedConference, imageUrl, paymentAmount);
       
       setUploadSuccess(true);
       await loadData(); // Reload payments
@@ -215,6 +216,7 @@ export const PaymentsModule: React.FC = () => {
     setUploadedImageUrl('');
     setUploadSuccess(false);
     setError('');
+    setPaymentAmount(0);
   };
 
   const formatDate = (dateString: string) => {
@@ -310,6 +312,9 @@ export const PaymentsModule: React.FC = () => {
                   Fecha
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Monto
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Comprobante
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -347,6 +352,11 @@ export const PaymentsModule: React.FC = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
                       {formatDate(payment.fecha)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      S/ {payment.monto.toFixed(2)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -463,6 +473,24 @@ export const PaymentsModule: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Payment Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Monto del Pago (S/) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                  placeholder="0.00"
+                  required
+                  disabled={uploading}
+                />
               </div>
 
               {/* File Upload */}

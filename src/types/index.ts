@@ -60,6 +60,7 @@ export interface Participation {
 export interface ParticipationRequest {
   dniUsuario: string;
   idConferencia: string;
+  servicio: string;
 }
 
 export interface Payment {

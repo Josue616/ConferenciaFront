@@ -36,7 +36,8 @@ export const ParticipationsModule: React.FC = () => {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<ParticipationRequest>({
     dniUsuario: '',
-    idConferencia: ''
+    idConferencia: '',
+    servicio: 'Participante'
   });
 
   useEffect(() => {
@@ -279,6 +280,9 @@ export const ParticipationsModule: React.FC = () => {
                   Región
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Servicio
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha Inscripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -317,6 +321,16 @@ export const ParticipationsModule: React.FC = () => {
                       <MapPin className="w-4 h-4 mr-2" />
                       {getConferenceRegion(participation.idConferencia)}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge variant={
+                      participation.servicio === 'Participante' ? 'primary' :
+                      participation.servicio === 'Musica' ? 'success' :
+                      participation.servicio === 'Cocina' ? 'warning' :
+                      participation.servicio === 'Infantes' ? 'secondary' : 'primary'
+                    }>
+                      {participation.servicio}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-600">
