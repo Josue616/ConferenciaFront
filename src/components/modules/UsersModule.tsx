@@ -288,7 +288,7 @@ export const UsersModule: React.FC = () => {
             <UserIcon className="w-5 h-5 text-blue-600" />
             <h3 className="text-lg font-semibold text-gray-900">Usuarios Masculinos</h3>
             <Badge variant="primary">
-              {filteredUsers.filter(u => u.sexo).length}
+              {maleUsers.length}
             </Badge>
           </div>
           <div className="overflow-x-auto">
@@ -454,7 +454,7 @@ export const UsersModule: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedFemaleUsers.map((user) => (
+                {filteredUsers.filter(user => !user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
                   <tr key={user.dni} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
