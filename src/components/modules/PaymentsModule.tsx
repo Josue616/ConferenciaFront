@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X } from 'lucide-react';
+import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X, Edit3, RotateCcw, Crop } from 'lucide-react';
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -55,6 +57,16 @@ export const PaymentsModule: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 90,
+    height: 90,
+    x: 5,
+    y: 5
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [imgRef, setImgRef] = useState<HTMLImageElement>();
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState('');
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -148,6 +160,78 @@ export const PaymentsModule: React.FC = () => {
     }
   };
 
+  const handleEditImage = () => {
+    setIsEditingImage(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingImage(false);
+    setCrop({
+      unit: '%',
+      width: 90,
+      height: 90,
+      x: 5,
+      y: 5
+    });
+    setCompletedCrop(undefined);
+  };
+
+  const handleApplyEdit = async () => {
+    if (!imgRef || !completedCrop || !selectedFile) return;
+
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const scaleX = imgRef.naturalWidth / imgRef.width;
+      const scaleY = imgRef.naturalHeight / imgRef.height;
+
+      canvas.width = completedCrop.width;
+      canvas.height = completedCrop.height;
+
+      ctx.drawImage(
+        imgRef,
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY,
+        0,
+        0,
+        completedCrop.width,
+        completedCrop.height
+      );
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        const editedFile = new File([blob], selectedFile.name, {
+          type: selectedFile.type,
+          lastModified: Date.now(),
+        });
+        
+        setSelectedFile(editedFile);
+        setPreviewUrl(URL.createObjectURL(editedFile));
+        setIsEditingImage(false);
+        setCrop({
+          unit: '%',
+          width: 90,
+          height: 90,
+          x: 5,
+          y: 5
+        });
+        setCompletedCrop(undefined);
+      }, selectedFile.type, 0.9);
+    } catch (error) {
+      console.error('Error editing image:', error);
+      setError('Error al editar la imagen. Por favor, intenta nuevamente.');
+    }
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImgRef(e.currentTarget);
+  };
+
   const handleUploadAndRegister = async () => {
     if (!selectedFile || !selectedUser || !selectedConference) return;
     
@@ -216,6 +300,15 @@ export const PaymentsModule: React.FC = () => {
     setUploadedImageUrl('');
     setUploadSuccess(false);
     setError('');
+    setIsEditingImage(false);
+    setCrop({
+      unit: '%',
+      width: 90,
+      height: 90,
+      x: 5,
+      y: 5
+    });
+    setCompletedCrop(undefined);
     setPaymentAmount(0);
   };
 
@@ -445,107 +538,177 @@ export const PaymentsModule: React.FC = () => {
           {!uploadSuccess && (
             <>
               {/* User Selection */}
-              <UserSearchSelect
-                selectedUser={selectedUser}
-                onUserSelect={setSelectedUser}
-                regions={regions}
-                placeholder="Buscar usuario por nombre..."
-                required
-                disabled={uploading}
-              />
+              {!isEditingImage ? (
+                <>
+                  <UserSearchSelect
+                    selectedUser={selectedUser}
+                    onUserSelect={setSelectedUser}
+                    regions={regions}
+                    placeholder="Buscar usuario por nombre..."
+                    required
+                    disabled={uploading}
+                  />
 
-              {/* Conference Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Conferencia <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedConference}
-                  onChange={(e) => setSelectedConference(e.target.value)}
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
-                  required
-                  disabled={uploading}
-                >
-                  <option value="">Seleccionar conferencia</option>
-                  {conferences.map(conference => (
-                    <option key={conference.id} value={conference.id}>
-                      {conference.nombres} - {conference.nombreRegion}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {/* Conference Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Conferencia <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedConference}
+                      onChange={(e) => setSelectedConference(e.target.value)}
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                      required
+                      disabled={uploading}
+                    >
+                      <option value="">Seleccionar conferencia</option>
+                      {conferences.map(conference => (
+                        <option key={conference.id} value={conference.id}>
+                          {conference.nombres} - {conference.nombreRegion}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Payment Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monto del Pago (S/) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
-                  placeholder="0.00"
-                  required
-                  disabled={uploading}
-                />
-              </div>
-
-              {/* File Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Comprobante de Pago <span className="text-red-500">*</span>
-                </label>
-                <div 
-                  className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors cursor-pointer"
-                  onDragOver={handleDragOver}
-                  onDragEnter={handleDragEnter}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  <div className="space-y-1 text-center">
-                    <Image className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <span className="font-medium text-blue-600">Subir archivo</span>
-                      <span className="pl-1">o arrastra y suelta</span>
-                    </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                  {/* Payment Amount */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Monto del Pago (S/) <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      id="file-upload"
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      accept="image/*"
-                      onChange={handleFileSelect}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                      placeholder="0.00"
+                      required
                       disabled={uploading}
                     />
                   </div>
-                </div>
-              </div>
 
-              {/* Image Preview */}
-              {previewUrl && (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-gray-700">Vista previa:</h4>
-                  <div className="relative">
-                    <img
-                      src={previewUrl}
-                      alt="Vista previa del comprobante"
-                      className="max-w-full h-48 object-contain mx-auto rounded-lg border border-gray-200"
-                    />
+                  {/* File Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Comprobante de Pago <span className="text-red-500">*</span>
+                    </label>
+                    <div 
+                      className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors cursor-pointer"
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
+                      <div className="space-y-1 text-center">
+                        <Image className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="flex text-sm text-gray-600">
+                          <span className="font-medium text-blue-600">Subir archivo</span>
+                          <span className="pl-1">o arrastra y suelta</span>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                        <input
+                          id="file-upload"
+                          name="file-upload"
+                          type="file"
+                          className="sr-only"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          disabled={uploading}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Uploaded Image URL */}
-              {uploadedImageUrl && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">Enlace generado:</h4>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600 break-all">{uploadedImageUrl}</p>
+                  {/* Image Preview */}
+                  {previewUrl && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-gray-700">Vista previa:</h4>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          icon={Edit3}
+                          onClick={handleEditImage}
+                          disabled={uploading}
+                        >
+                          Editar Foto
+                        </Button>
+                      </div>
+                      <div className="relative">
+                        <img
+                          src={previewUrl}
+                          alt="Vista previa del comprobante"
+                          className="max-w-full h-48 object-contain mx-auto rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Uploaded Image URL */}
+                  {uploadedImageUrl && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700">Enlace generado:</h4>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-600 break-all">{uploadedImageUrl}</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Image Editor */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-medium text-gray-900 flex items-center">
+                      <Crop className="w-5 h-5 mr-2" />
+                      Editar Imagen
+                    </h4>
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        icon={RotateCcw}
+                        onClick={handleCancelEdit}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleApplyEdit}
+                        disabled={!completedCrop}
+                      >
+                        Aplicar
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Arrastra para seleccionar el área que deseas mantener en la imagen:
+                    </p>
+                    <div className="flex justify-center">
+                      <ReactCrop
+                        crop={crop}
+                        onChange={(_, percentCrop) => setCrop(percentCrop)}
+                        onComplete={(c) => setCompletedCrop(c)}
+                        aspect={undefined}
+                        minWidth={50}
+                        minHeight={50}
+                      >
+                        <img
+                          ref={setImgRef}
+                          alt="Crop me"
+                          src={previewUrl}
+                          style={{ maxHeight: '400px', maxWidth: '100%' }}
+                          onLoad={onImageLoad}
+                        />
+                      </ReactCrop>
+                    </div>
                   </div>
                 </div>
               )}
@@ -572,21 +735,20 @@ export const PaymentsModule: React.FC = () => {
             
             {/* Right side - Action buttons */}
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={handleCloseUploadModal}
-              disabled={uploading}
-              className="w-full sm:w-auto"
-            >
-
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handleCloseUploadModal}
+                disabled={uploading}
+                className="w-full sm:w-auto"
+              >
                 {uploadSuccess ? 'Cerrar' : 'Cancelar'}
               </Button>
-              {!uploadSuccess && (
+              {!uploadSuccess && !isEditingImage && (
                 <Button 
                   onClick={handleUploadAndRegister}
                   loading={uploading}
-                 disabled={uploading || !selectedFile || !selectedUser || !selectedConference || paymentAmount <= 0}
+                  disabled={uploading || !selectedFile || !selectedUser || !selectedConference || paymentAmount <= 0}
                   icon={Upload}
                   className="w-full sm:w-auto min-w-[140px]"
                 >
