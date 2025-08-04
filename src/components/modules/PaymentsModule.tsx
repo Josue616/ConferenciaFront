@@ -53,7 +53,6 @@ export const PaymentsModule: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedConference, setSelectedConference] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -160,7 +159,7 @@ export const PaymentsModule: React.FC = () => {
       setUploadedImageUrl(imageUrl);
       
       // Step 2: Register payment in API
-      await paymentsApi.create(selectedUser, selectedConference, imageUrl, paymentAmount);
+      await paymentsApi.create(selectedUser, selectedConference, imageUrl);
       
       setUploadSuccess(true);
       await loadData(); // Reload payments
@@ -212,7 +211,6 @@ export const PaymentsModule: React.FC = () => {
     setSelectedUser('');
     setSelectedConference('');
     setSelectedFile(null);
-    setPaymentAmount(0);
     setPreviewUrl('');
     setUploadedImageUrl('');
     setUploadSuccess(false);
@@ -312,9 +310,6 @@ export const PaymentsModule: React.FC = () => {
                   Fecha
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Monto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Comprobante
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -352,11 +347,6 @@ export const PaymentsModule: React.FC = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
                       {formatDate(payment.fecha)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      S/ {payment.monto.toFixed(2)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -568,7 +558,7 @@ export const PaymentsModule: React.FC = () => {
                 <Button 
                   onClick={handleUploadAndRegister}
                   loading={uploading}
-                  disabled={uploading || !selectedFile || !selectedUser || !selectedConference}
+                 disabled={uploading || !selectedFile || !selectedUser || !selectedConference || paymentAmount <= 0}
                   icon={Upload}
                   className="w-full sm:w-auto min-w-[140px]"
                 >

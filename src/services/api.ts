@@ -821,7 +821,7 @@ export const paymentsApi = {
     }
   },
 
-  create: async (dniUsuario: string, idConferencia: string, enlace: string): Promise<Payment> => {
+  create: async (dniUsuario: string, idConferencia: string, enlace: string, monto: number = 0): Promise<Payment> => {
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE_URL}/Pagos`, {
@@ -834,7 +834,8 @@ export const paymentsApi = {
         body: JSON.stringify({
           dniUsuario,
           idConferencia,
-          enlace
+          enlace,
+          monto
         })
       });
 
