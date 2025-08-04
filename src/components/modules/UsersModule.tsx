@@ -272,7 +272,203 @@ export const UsersModule: React.FC = () => {
       </Card>
 
       {/* Users Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Usuarios Masculinos */}
+        <Card padding="sm">
+          <div className="mb-4 flex items-center space-x-2">
+            <UserIcon className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Usuarios Masculinos</h3>
+            <Badge variant="primary">
+              {filteredUsers.filter(u => u.sexo).length}
+            </Badge>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Usuario
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Región
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Grupo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredUsers.filter(user => user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
+                  <tr key={user.dni} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.nombres}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.dni} • {user.edad} años
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">
+                        {user.region.nombres}
+                      </div>
+                      <Badge variant={getRoleBadgeVariant(user.rol)} size="xs">
+                        {user.rol}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <Badge variant={
+                        user.grupoEdad === 'Infante' ? 'warning' :
+                        user.grupoEdad === 'Niño' ? 'primary' :
+                        user.grupoEdad === 'Adulto' ? 'success' : 'secondary'
+                      } size="xs">
+                        {user.grupoEdad}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-1">
+                        {(isAdmin || user.rol === 'Oyente') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Edit}
+                            onClick={() => handleEdit(user)}
+                            className="text-blue-600 hover:text-blue-700"
+                          />
+                        )}
+                        {isAdmin && user.rol !== 'Admin' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDeleteClick(user)}
+                            className="text-red-600 hover:text-red-700"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Usuarios Femeninos */}
+        <Card padding="sm">
+          <div className="mb-4 flex items-center space-x-2">
+            <UserX className="w-5 h-5 text-pink-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Usuarios Femeninos</h3>
+            <Badge variant="secondary">
+              {filteredUsers.filter(u => !u.sexo).length}
+            </Badge>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Usuario
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Región
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Grupo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredUsers.filter(user => !user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
+                  <tr key={user.dni} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
+                          <UserX className="w-4 h-4 text-pink-600" />
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.nombres}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.dni} • {user.edad} años
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600">
+                        {user.region.nombres}
+                      </div>
+                      <Badge variant={getRoleBadgeVariant(user.rol)} size="xs">
+                        {user.rol}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <Badge variant={
+                        user.grupoEdad === 'Infante' ? 'warning' :
+                        user.grupoEdad === 'Niño' ? 'primary' :
+                        user.grupoEdad === 'Adulto' ? 'success' : 'secondary'
+                      } size="xs">
+                        {user.grupoEdad}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-1">
+                        {(isAdmin || user.rol === 'Oyente') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Edit}
+                            onClick={() => handleEdit(user)}
+                            className="text-blue-600 hover:text-blue-700"
+                          />
+                        )}
+                        {isAdmin && user.rol !== 'Admin' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDeleteClick(user)}
+                            className="text-red-600 hover:text-red-700"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      {/* Pagination - Shared for both tables */}
       <Card padding="sm">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredUsers.length}
+        />
+      </Card>
+
+      {/* Old single table - removed */}
+      {false && <Card padding="sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -379,16 +575,7 @@ export const UsersModule: React.FC = () => {
             </tbody>
           </table>
         </div>
-        
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={filteredUsers.length}
-        />
-      </Card>
+      </Card>}
 
       {filteredUsers.length === 0 && !loading && (
         <Card className="text-center py-12">
