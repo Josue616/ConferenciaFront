@@ -30,7 +30,8 @@ export const ConferencesModule: React.FC = () => {
     fechaInicio: '',
     fechaFin: '',
     fechaFinIns: '',
-    capacidad: 50
+    capacidad: 50,
+    montoIns: 0
   });
 
   useEffect(() => {
@@ -113,7 +114,8 @@ export const ConferencesModule: React.FC = () => {
       fechaInicio: formatDateForInput(conference.fechaInicio),
       fechaFin: formatDateForInput(conference.fechaFin),
       fechaFinIns: formatDateForInput(conference.fechaFinIns),
-      capacidad: conference.capacidad
+      capacidad: conference.capacidad,
+      montoIns: conference.montoIns
     });
     setIsModalOpen(true);
   };
@@ -128,7 +130,8 @@ export const ConferencesModule: React.FC = () => {
       fechaInicio: '',
       fechaFin: '',
       fechaFinIns: '',
-      capacidad: 50
+      capacidad: 50,
+      montoIns: 0
     });
   };
 
@@ -234,6 +237,10 @@ export const ConferencesModule: React.FC = () => {
                   <Users className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span>{conference.participantesInscritos}/{conference.capacidad} participantes</span>
                 </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <span className="w-4 h-4 mr-2 flex-shrink-0">S/</span>
+                  <span>{conference.montoIns.toFixed(2)}</span>
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -327,16 +334,28 @@ export const ConferencesModule: React.FC = () => {
             />
           </div>
 
-          <Input
-            label="Capacidad máxima"
-            type="number"
-            min="1"
-            max="1000"
-            value={formData.capacidad}
-            onChange={(e) => setFormData(prev => ({ ...prev, capacidad: parseInt(e.target.value) || 1 }))}
-            placeholder="Número máximo de participantes"
-            required
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Capacidad máxima"
+              type="number"
+              min="1"
+              max="1000"
+              value={formData.capacidad}
+              onChange={(e) => setFormData(prev => ({ ...prev, capacidad: parseInt(e.target.value) || 1 }))}
+              placeholder="Número máximo de participantes"
+              required
+            />
+            <Input
+              label="Monto de inscripción (S/)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.montoIns}
+              onChange={(e) => setFormData(prev => ({ ...prev, montoIns: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+              required
+            />
+          </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <Button 

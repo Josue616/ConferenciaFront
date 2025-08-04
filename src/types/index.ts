@@ -8,6 +8,7 @@ export interface User {
   password?: string;
   idRegion: string;
   edad: number;
+  grupoEdad: string;
   region: {
     id: string;
     nombres: string;
@@ -42,6 +43,7 @@ export interface Conference {
   fechaFin: string;
   fechaFinIns: string;
   capacidad: number;
+  montoIns: number;
   participantesInscritos: number;
   estaVigente: boolean;
 }
@@ -67,6 +69,7 @@ export interface Payment {
   idConferencia: string;
   nombreConferencia: string;
   enlace: string;
+  monto: number;
   fecha: string;
 }
 
@@ -90,6 +93,7 @@ export interface ConferenceRequest {
   fechaFin: string;
   fechaFinIns: string;
   capacidad: number;
+  montoIns: number;
 }
 
 // Reports Types
