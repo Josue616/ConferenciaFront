@@ -13,7 +13,7 @@ import { usersApi, regionsApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDateForInput, formatDateForDisplay } from '../../utils/dateUtils';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 export const UsersModule: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -72,9 +72,15 @@ export const UsersModule: React.FC = () => {
   });
 
   // Paginación
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const maleUsers = filteredUsers.filter(user => user.sexo);
+  const femaleUsers = filteredUsers.filter(user => !user.sexo);
+  
+  const totalMalePages = Math.ceil(maleUsers.length / ITEMS_PER_PAGE);
+  const totalFemalePages = Math.ceil(femaleUsers.length / ITEMS_PER_PAGE);
+  
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedMaleUsers = maleUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedFemaleUsers = femaleUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // Reset página cuando cambian los filtros
   useEffect(() => {
@@ -319,7 +325,7 @@ export const UsersModule: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.filter(user => user.sexo).slice(startIndex, startIndex + ITEMS_PER_PAGE).map((user) => (
+                {paginatedMaleUsers.map((user) => (
                   <tr key={user.dni} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

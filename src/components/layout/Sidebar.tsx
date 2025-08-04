@@ -106,11 +106,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onViewChange(item.id)}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border border-blue-300 shadow-sm'
+                    ? 'bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 shadow-sm'
                     : 'text-blue-700 hover:bg-blue-50'
                 }`}
               >
-                <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isActive ? 'text-blue-600' : 'text-blue-500'} flex-shrink-0`} />
+                <div className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} ${isActive ? 'text-blue-600' : 'text-blue-500'}`} />
+                </div>
                 {!isCollapsed && (
                   <span className="font-medium">{item.label}</span>
                 )}
