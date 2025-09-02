@@ -278,9 +278,6 @@ export const ParticipationsModule: React.FC = () => {
                   Conferencia
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Región
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Servicio
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -315,12 +312,6 @@ export const ParticipationsModule: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
                       {participation.nombreConferencia}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {getConferenceRegion(participation.idConferencia)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

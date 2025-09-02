@@ -17,8 +17,21 @@ export interface User {
   pagos?: Payment[];
 }
 
+// Petición para crear usuario (requiere dni inicial)
 export interface UserRequest {
-  dni?: string; // Solo para crear, no para editar
+  dni: string; // Para creación
+  nombres: string;
+  sexo: boolean;
+  fechaNacimiento: string;
+  telefono: string;
+  rol: 'Admin' | 'Encargado' | 'Oyente';
+  password: string | null;
+  idRegion: string;
+}
+
+// Petición para actualizar usuario (se pasa dni actual en la ruta y nuevoDni en el cuerpo)
+export interface UserUpdateRequest {
+  nuevoDni: string; // Si no cambia, enviar el mismo dni actual
   nombres: string;
   sexo: boolean;
   fechaNacimiento: string;
@@ -208,4 +221,13 @@ export interface ConferenceRegionParticipantsReport {
       fechaParticipacion: string;
     }[];
   }[];
+}
+
+// Pagos - Participantes faltantes de pago para la próxima conferencia
+export interface NextConferenceMissingPaymentParticipant {
+  dniUsuario: string;
+  nombreUsuario: string;
+  idConferencia: string;
+  nombreConferencia: string;
+  servicio: string;
 }

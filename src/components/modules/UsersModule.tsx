@@ -8,7 +8,7 @@ import { Modal } from '../ui/Modal';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { User, Region, UserRequest } from '../../types';
+import { User, Region, UserRequest, UserUpdateRequest } from '../../types';
 import { usersApi, regionsApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDateForInput, formatDateForDisplay } from '../../utils/dateUtils';
@@ -30,8 +30,20 @@ export const UsersModule: React.FC = () => {
   const [error, setError] = useState('');
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<UserRequest>({
+  // formData se usa tanto para crear como para editar; en edición se usará campo nuevoDni separado
+  const [formData, setFormData] = useState<{
+    dni: string; // Para creación
+    nuevoDni: string; // Para edición (si no cambia, mismo valor del dni original)
+    nombres: string;
+    sexo: boolean;
+    fechaNacimiento: string;
+    telefono: string;
+    rol: 'Admin' | 'Encargado' | 'Oyente';
+    password: string | null;
+    idRegion: string;
+  }>({
     dni: '',
+    nuevoDni: '',
     nombres: '',
     sexo: true,
     fechaNacimiento: '',
@@ -73,14 +85,12 @@ export const UsersModule: React.FC = () => {
 
   // Paginación
   const maleUsers = filteredUsers.filter(user => user.sexo);
-  const femaleUsers = filteredUsers.filter(user => !user.sexo);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   const paginatedMaleUsers = paginatedUsers.filter(user => user.sexo);
-  const paginatedFemaleUsers = paginatedUsers.filter(user => !user.sexo);
 
   // Reset página cuando cambian los filtros
   useEffect(() => {
@@ -94,16 +104,30 @@ export const UsersModule: React.FC = () => {
     
     try {
       // Preparar los datos según el rol
-      const submitData = {
-        ...formData,
-        password: formData.rol === 'Oyente' ? null : formData.password
-      };
-
       if (editingUser) {
-        const { dni, ...updateData } = submitData;
-        await usersApi.update(editingUser.dni, updateData);
+        const updatePayload: UserUpdateRequest = {
+          nuevoDni: formData.nuevoDni || editingUser.dni,
+          nombres: formData.nombres,
+            sexo: formData.sexo,
+            fechaNacimiento: formData.fechaNacimiento,
+            telefono: formData.telefono,
+            rol: formData.rol,
+            password: formData.rol === 'Oyente' ? null : formData.password,
+            idRegion: formData.idRegion
+        };
+        await usersApi.update(editingUser.dni, updatePayload);
       } else {
-        await usersApi.create(submitData);
+        const createPayload: UserRequest = {
+          dni: formData.dni,
+          nombres: formData.nombres,
+          sexo: formData.sexo,
+          fechaNacimiento: formData.fechaNacimiento,
+          telefono: formData.telefono,
+          rol: formData.rol,
+          password: formData.rol === 'Oyente' ? null : formData.password,
+          idRegion: formData.idRegion
+        };
+        await usersApi.create(createPayload);
       }
       await loadData();
       handleCloseModal();
@@ -118,7 +142,8 @@ export const UsersModule: React.FC = () => {
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
-      dni: user.dni,
+      dni: user.dni, // Se mantiene por referencia
+      nuevoDni: user.dni,
       nombres: user.nombres,
       sexo: user.sexo,
       fechaNacimiento: formatDateForInput(user.fechaNacimiento),
@@ -136,6 +161,7 @@ export const UsersModule: React.FC = () => {
     setError('');
     setFormData({
       dni: '',
+      nuevoDni: '',
       nombres: '',
       sexo: true,
       fechaNacimiento: '',
@@ -690,7 +716,16 @@ export const UsersModule: React.FC = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {!editingUser && (
+            {/* DNI: en creación se usa dni, en edición se muestra nuevoDni para posible cambio */}
+            {editingUser ? (
+              <Input
+                label="Nuevo DNI"
+                value={formData.nuevoDni}
+                onChange={(e) => setFormData(prev => ({ ...prev, nuevoDni: e.target.value }))}
+                placeholder="Nuevo DNI (o mantén el actual)"
+                required
+              />
+            ) : (
               <Input
                 label="DNI"
                 value={formData.dni}
@@ -706,7 +741,7 @@ export const UsersModule: React.FC = () => {
               onChange={(e) => setFormData(prev => ({ ...prev, nombres: e.target.value }))}
               placeholder="Nombres y apellidos"
               required
-              className={!editingUser ? 'md:col-span-1' : 'md:col-span-2'}
+              className={!editingUser ? 'md:col-span-1' : 'md:col-span-1'}
             />
           </div>
 

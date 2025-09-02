@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Users, UserCheck, CreditCard, TrendingUp, MapPin } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { reportsApi, conferencesApi } from '../../services/api';
-import { UsersTotalReport, ParticipantsReport } from '../../types';
+import { reportsApi, conferencesApi, paymentsApi } from '../../services/api';
+import { UsersTotalReport, ParticipantsReport, NextConferenceMissingPaymentParticipant } from '../../types';
 
 interface StatCardProps {
   title: string;
@@ -63,6 +63,7 @@ export const DashboardStats: React.FC = () => {
   const [participantsReport, setParticipantsReport] = useState<ParticipantsReport | null>(null);
   const [conferencesCount, setConferencesCount] = useState<number>(0);
   const [paymentsData, setPaymentsData] = useState<{ total: number; withPayment: number } | null>(null);
+  const [missingPayments, setMissingPayments] = useState<NextConferenceMissingPaymentParticipant[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -78,7 +79,8 @@ export const DashboardStats: React.FC = () => {
       let usersData = null;
       let participantsData = null;
       let conferencesData = [];
-      let participationsWithPayments = [];
+  let participationsWithPayments: { tienePago: boolean }[] = [];
+  let nextConferenceMissing: NextConferenceMissingPaymentParticipant[] = [];
 
       try {
         usersData = await reportsApi.getUsersTotal();
@@ -104,14 +106,21 @@ export const DashboardStats: React.FC = () => {
         console.warn('Error loading participations with payments:', error);
       }
 
+      try {
+        nextConferenceMissing = await paymentsApi.getNextConferenceMissingPayments();
+      } catch (error) {
+        console.warn('Error loading next conference missing payments:', error);
+      }
+
       setUsersReport(usersData);
       setParticipantsReport(participantsData);
       setConferencesCount(conferencesData.length);
       
       // Calculate payments statistics
       const totalParticipations = participationsWithPayments.length;
-      const withPayment = participationsWithPayments.filter(p => p.tienePago).length;
+  const withPayment = participationsWithPayments.filter(p => p.tienePago).length;
       setPaymentsData({ total: totalParticipations, withPayment });
+  setMissingPayments(nextConferenceMissing);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -270,6 +279,39 @@ export const DashboardStats: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Lista de participantes faltantes de pago para la próxima conferencia */}
+          {missingPayments && (
+            <div className="mt-6">
+              <h4 className="text-md font-semibold text-gray-800 mb-2">Faltantes de Pago (Próxima Conferencia)</h4>
+              {missingPayments.length === 0 ? (
+                <p className="text-sm text-gray-600">No hay participantes pendientes de pago.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-600 border-b">
+                        <th className="py-2 pr-4">DNI</th>
+                        <th className="py-2 pr-4">Nombre</th>
+                        <th className="py-2 pr-4">Servicio</th>
+                        <th className="py-2 pr-4">Conferencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {missingPayments.map(mp => (
+                        <tr key={`${mp.dniUsuario}-${mp.idConferencia}`} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-mono text-xs">{mp.dniUsuario}</td>
+                          <td className="py-2 pr-4">{mp.nombreUsuario}</td>
+                          <td className="py-2 pr-4">{mp.servicio}</td>
+                          <td className="py-2 pr-4">{mp.nombreConferencia}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       )}
     </div>

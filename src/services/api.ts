@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, ParticipationRequest } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
@@ -109,12 +109,18 @@ export const conferencesApi = {
       const regions = await regionsApi.getAll();
       const region = regions.find(r => r.id === conference.idRegion);
       
+      const ahora = new Date();
+      const inicio = new Date(conference.fechaInicio);
+      const fin = new Date(conference.fechaFin);
+      const estaVigente = ahora >= inicio && ahora <= fin;
+
       return {
         id,
         ...conference,
         nombreRegion: region?.nombres || 'Desconocida',
-        participantesInscritos: 0 // Este valor debería venir de la API real
-      };
+        participantesInscritos: 0, // Placeholder hasta que API real lo devuelva
+        estaVigente
+      } as Conference;
     } catch (error) {
       console.error('Error updating conference:', error);
       throw error;
@@ -189,7 +195,7 @@ export const usersApi = {
     }
   },
 
-  update: async (dni: string, user: Omit<UserRequest, 'dni'>): Promise<void> => {
+  update: async (dni: string, user: UserUpdateRequest): Promise<void> => {
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE_URL}/Usuarios/${dni}`, {
@@ -775,6 +781,27 @@ export const paymentsApi = {
       return await response.json();
     } catch (error) {
       console.error('Error fetching payments:', error);
+      throw error;
+    }
+  },
+
+  getNextConferenceMissingPayments: async (): Promise<NextConferenceMissingPaymentParticipant[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/Pagos/conferencia/faltantes/proxima`, {
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener participantes faltantes de pago');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching next conference missing payments:', error);
       throw error;
     }
   },
