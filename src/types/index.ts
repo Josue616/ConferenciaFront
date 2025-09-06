@@ -69,12 +69,16 @@ export interface Participation {
   nombreConferencia: string;
   servicio: string;
   fecha: string;
+  almuerzo?: boolean | null;
+  cena?: boolean | null;
 }
 
 export interface ParticipationRequest {
   dniUsuario: string;
   idConferencia: string;
   servicio: string;
+  almuerzo: boolean;
+  cena: boolean;
 }
 
 export interface Payment {

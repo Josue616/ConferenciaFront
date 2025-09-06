@@ -535,6 +535,8 @@ const generateParticipationsCSV = (participations: any[]): string => {
     'Región Usuario',
     'ID Conferencia',
     'Nombre Conferencia',
+  'Almuerzo',
+  'Cena',
     'Fecha Inscripción',
     'Hora Inscripción'
   ];
@@ -555,6 +557,8 @@ const generateParticipationsCSV = (participations: any[]): string => {
       user ? user.region.nombres : 'N/A',
       participation.idConferencia,
       participation.nombreConferencia,
+  participation.almuerzo ? 'Sí' : 'No',
+  participation.cena ? 'Sí' : 'No',
       fechaInscripcion.toLocaleDateString('es-ES'),
       fechaInscripcion.toLocaleTimeString('es-ES')
     ];

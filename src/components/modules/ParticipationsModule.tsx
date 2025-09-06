@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, Calendar, MapPin, Users, Plus, Filter, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2, Download } from 'lucide-react';
+import { UserCheck, Search, Calendar, MapPin, Users, Plus, AlertCircle, UserIcon, Calendar as CalendarIcon, Trash2, Download, Check, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
-import { Participation, ParticipationRequest, Conference, Region, User } from '../../types';
+import { Participation, ParticipationRequest, Conference, Region } from '../../types';
 import { participationsApi, conferencesApi, regionsApi, csvExportApi } from '../../services/api';
 import { UserSearchSelect } from '../ui/UserSearchSelect';
 
@@ -37,7 +37,9 @@ export const ParticipationsModule: React.FC = () => {
   const [formData, setFormData] = useState<ParticipationRequest>({
     dniUsuario: '',
     idConferencia: '',
-    servicio: 'Participante'
+  servicio: 'Participante',
+  almuerzo: false,
+  cena: false
   });
 
   useEffect(() => {
@@ -146,7 +148,9 @@ export const ParticipationsModule: React.FC = () => {
     setFormData({
       dniUsuario: '',
       idConferencia: '',
-      servicio: 'Participante'
+  servicio: 'Participante',
+  almuerzo: false,
+  cena: false
     });
   };
 
@@ -164,10 +168,7 @@ export const ParticipationsModule: React.FC = () => {
     }
   };
 
-  const getConferenceRegion = (conferenceId: string) => {
-    const conference = conferences.find(c => c.id === conferenceId);
-    return conference ? conference.nombreRegion : 'Desconocida';
-  };
+  // Nota: Si se necesita la región de la conferencia, utilizar directamente el objeto en 'conferences'.
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -281,6 +282,12 @@ export const ParticipationsModule: React.FC = () => {
                   Servicio
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Almuerzo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cena
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha Inscripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -323,6 +330,20 @@ export const ParticipationsModule: React.FC = () => {
                     }>
                       {participation.servicio}
                     </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {participation.almuerzo ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <X className="w-5 h-5 text-red-600" />
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {participation.cena ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <X className="w-5 h-5 text-red-600" />
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-600">
@@ -413,6 +434,30 @@ export const ParticipationsModule: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Opciones de alimentación */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="inline-flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                checked={formData.almuerzo}
+                onChange={(e) => setFormData(prev => ({ ...prev, almuerzo: e.target.checked }))}
+                disabled={submitting}
+              />
+              <span className="text-sm text-gray-700">Almuerzo</span>
+            </label>
+            <label className="inline-flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                checked={formData.cena}
+                onChange={(e) => setFormData(prev => ({ ...prev, cena: e.target.checked }))}
+                disabled={submitting}
+              />
+              <span className="text-sm text-gray-700">Cena</span>
+            </label>
           </div>
 
           {/* Conference Info */}
