@@ -16,7 +16,7 @@ import { formatDateForInput, formatDateForDisplay } from '../../utils/dateUtils'
 const ITEMS_PER_PAGE = 5;
 
 export const UsersModule: React.FC = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isEncargado, user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +56,15 @@ export const UsersModule: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Preseleccionar y bloquear región para Encargado al crear nuevo usuario
+  useEffect(() => {
+    if (!isModalOpen || editingUser || !isEncargado) return;
+    const encargadoRegion = regions.find(r => r.nombres === user?.nombreRegion);
+    if (encargadoRegion && formData.idRegion !== encargadoRegion.id) {
+      setFormData(prev => ({ ...prev, idRegion: encargadoRegion.id }));
+    }
+  }, [isModalOpen, editingUser, isEncargado, regions, user, formData.idRegion]);
 
   const loadData = async () => {
     try {
@@ -820,19 +829,32 @@ export const UsersModule: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Región <span className="text-red-500">*</span>
               </label>
-              <select
-                value={formData.idRegion}
-                onChange={(e) => setFormData(prev => ({ ...prev, idRegion: e.target.value }))}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
-                required
-              >
-                <option value="">Seleccionar región</option>
-                {regions.map(region => (
-                  <option key={region.id} value={region.id}>
-                    {region.nombres}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const encargadoRegion = regions.find(r => r.nombres === user?.nombreRegion);
+                const lockRegion = !!(isEncargado && !editingUser && encargadoRegion);
+                return (
+                  <select
+                    value={formData.idRegion}
+                    onChange={(e) => setFormData(prev => ({ ...prev, idRegion: e.target.value }))}
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                    required
+                    disabled={lockRegion}
+                  >
+                    {lockRegion ? (
+                      <option value={encargadoRegion!.id}>{encargadoRegion!.nombres}</option>
+                    ) : (
+                      <>
+                        <option value="">Seleccionar región</option>
+                        {regions.map(region => (
+                          <option key={region.id} value={region.id}>
+                            {region.nombres}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                );
+              })()}
             </div>
           </div>
 
