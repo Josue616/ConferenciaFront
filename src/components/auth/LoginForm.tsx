@@ -85,6 +85,65 @@ const animationStyles = `
   .input-glow:focus {
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
   }
+
+  /* --------------------
+     Tema adaptativo inputs
+     -------------------- */
+  :root {
+    --login-input-color: #f1f5f9; /* slate-100 */
+    --login-placeholder-color: rgba(241,245,249,0.6);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --login-input-color: #1e293b; /* slate-800 */
+      --login-placeholder-color: #64748b; /* slate-500 */
+    }
+    /* Ajustes de fondo para que el contraste sea suficiente en modo claro */
+    .gradient-bg {
+      background: linear-gradient(-45deg,#e0e7ff,#c7d2fe,#bfdbfe,#e0e7ff);
+      color: #1e293b;
+    }
+    .glass-effect {
+      background: rgba(255,255,255,0.85);
+      border-color: rgba(0,0,0,0.05);
+    }
+    .login-input {
+      background: rgba(255,255,255,0.9);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .login-input {
+      background: rgba(255,255,255,0.08);
+    }
+  }
+
+  .login-input {
+    color: var(--login-input-color);
+    caret-color: var(--login-input-color);
+  }
+
+  .login-input::placeholder {
+    color: var(--login-placeholder-color);
+  }
+
+  /* Autofill (Safari / Chrome) para mantener contraste */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--login-input-color) !important;
+    caret-color: var(--login-input-color);
+    transition: background-color 9999s ease-in-out 0s;
+    box-shadow: 0 0 0px 1000px rgba(255,255,255,0.15) inset;
+  }
+  @media (prefers-color-scheme: light) {
+    .login-input:-webkit-autofill,
+    .login-input:-webkit-autofill:hover,
+    .login-input:-webkit-autofill:focus {
+      box-shadow: 0 0 0px 1000px #ffffff inset;
+    }
+  }
 `;
 
 export const LoginForm: React.FC = () => {
@@ -208,8 +267,10 @@ export const LoginForm: React.FC = () => {
                         value={credentials.dni}
                         onChange={(e) => setCredentials(prev => ({ ...prev, dni: e.target.value }))}
                         placeholder="Ingresa tu DNI"
-                        className="block w-full pl-12 pr-4 py-3 glass-effect rounded-xl text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 input-glow"
+                        className="login-input block w-full pl-12 pr-4 py-3 glass-effect rounded-xl placeholder:opacity-70 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 input-glow"
                         required
+                        inputMode="numeric"
+                        autoComplete="username"
                       />
                     </div>
                   </div>
@@ -228,8 +289,9 @@ export const LoginForm: React.FC = () => {
                         value={credentials.password}
                         onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Ingresa tu contraseña"
-                        className="block w-full pl-12 pr-12 py-3 glass-effect rounded-xl text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 input-glow"
+                        className="login-input block w-full pl-12 pr-12 py-3 glass-effect rounded-xl placeholder:opacity-70 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 input-glow"
                         required
+                        autoComplete="current-password"
                       />
                       <button
                         type="button"
