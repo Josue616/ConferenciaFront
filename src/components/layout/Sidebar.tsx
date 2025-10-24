@@ -9,7 +9,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Heart
+  Heart,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { id: 'conferences', label: 'Conferencias', icon: Calendar, adminOnly: true },
+  { id: 'conferenceReports', label: 'Reportes', icon: BarChart3, adminOnly: true },
     { id: 'users', label: 'Usuarios', icon: Users, adminOnly: false },
     { id: 'participations', label: 'Participaciones', icon: UserCheck, adminOnly: false },
     { id: 'payments', label: 'Pagos', icon: CreditCard, adminOnly: false },

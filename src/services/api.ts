@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
@@ -588,6 +588,32 @@ const generateParticipationsCSVFromJson = (participations: any[]): string => {
 
 // Reports API
 export const reportsApi = {
+  getConferenceFinancialReport: async (conferenceId: string, regionId?: string): Promise<ConferenceFinancialReport> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const url = new URL(`${API_BASE_URL}/admin/conferencias-reportes/${conferenceId}`);
+      if (regionId) {
+        url.searchParams.append('regionId', regionId);
+      }
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener el reporte financiero de la conferencia');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching conference financial report:', error);
+      throw error;
+    }
+  },
+
   getUsersTotal: async (): Promise<UsersTotalReport> => {
     try {
       const token = localStorage.getItem('auth_token');

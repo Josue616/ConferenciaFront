@@ -227,6 +227,78 @@ export interface ConferenceRegionParticipantsReport {
   }[];
 }
 
+export interface ConferenceFinancialReport {
+  conferencia: {
+    id: string;
+    nombres: string;
+    idRegion: string;
+    regionConferencia: string;
+    fechaInicio: string;
+    fechaFin: string;
+    fechaFinIns: string;
+    capacidad: number;
+    montoIns: number;
+    totalEsperadoCapacidad: number;
+    totalPagadoConferencia: number;
+    diferenciaCapacidad: number;
+    participantesRegistrados: number;
+    capacidadDisponible: number;
+  };
+  filtros: {
+    regionId: string | null;
+    regionNombre: string | null;
+  };
+  resumenParticipantes: {
+    totalParticipantes: number;
+    montoEsperado: number;
+    montoPagado: number;
+    diferencia: number;
+  };
+  regiones: ConferenceFinancialRegionReport[];
+  pagosSinParticipacion: ConferenceFinancialPaymentRecord[];
+  pagosFueraDelFiltro: ConferenceFinancialPaymentRecord[];
+}
+
+export interface ConferenceFinancialRegionReport {
+  regionId: string;
+  regionNombre: string;
+  totalParticipantes: number;
+  montoEsperado: number;
+  montoPagado: number;
+  diferencia: number;
+  participantes: ConferenceFinancialParticipant[];
+}
+
+export interface ConferenceFinancialParticipant {
+  dniUsuario: string;
+  nombreUsuario: string;
+  regionId: string;
+  regionNombre: string;
+  fechaRegistro: string;
+  servicio: string;
+  incluyeAlmuerzo: boolean;
+  incluyeCena: boolean;
+  montoEsperado: number;
+  totalPagado: number;
+  diferencia: number;
+  pagos: ConferenceFinancialPayment[];
+}
+
+export interface ConferenceFinancialPayment {
+  id: string;
+  monto: number;
+  fecha: string;
+  enlace: string;
+}
+
+export interface ConferenceFinancialPaymentRecord {
+  id: string;
+  dniUsuario: string;
+  monto: number;
+  fecha: string;
+  enlace: string;
+}
+
 // Pagos - Participantes faltantes de pago para la próxima conferencia
 export interface NextConferenceMissingPaymentParticipant {
   dniUsuario: string;

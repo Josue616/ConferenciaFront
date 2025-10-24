@@ -8,6 +8,7 @@ import { UsersModule } from './components/modules/UsersModule';
 import { ParticipationsModule } from './components/modules/ParticipationsModule';
 import { PaymentsModule } from './components/modules/PaymentsModule';
 import { RegionsModule } from './components/modules/RegionsModule';
+import { ConferenceReportsModule } from './components/modules/ConferenceReportsModule';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -39,6 +40,8 @@ const AppContent: React.FC = () => {
         return <PaymentsModule />;
       case 'regions':
         return <RegionsModule />;
+      case 'conferenceReports':
+        return <ConferenceReportsModule />;
       default:
         return <Dashboard />;
     }
