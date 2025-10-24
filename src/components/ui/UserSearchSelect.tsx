@@ -31,6 +31,15 @@ export const UserSearchSelect: React.FC<UserSearchSelectProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
+  useEffect(() => {
+    if (!selectedUser) {
+      setSelectedUserData(null);
+      setSearchTerm('');
+      setSearchResults([]);
+      setIsOpen(false);
+    }
+  }, [selectedUser]);
+
   // Para Encargados, usar su región automáticamente
   useEffect(() => {
     if (!isAdmin && currentUser) {
@@ -48,12 +57,19 @@ export const UserSearchSelect: React.FC<UserSearchSelectProps> = ({
       clearTimeout(searchTimeoutRef.current);
     }
 
+    if (selectedUserData && searchTerm === selectedUserData.nombres) {
+      setSearchResults([]);
+      setIsOpen(false);
+      return;
+    }
+
     if (searchTerm.length >= 2) {
       searchTimeoutRef.current = setTimeout(() => {
         performSearch();
       }, 300);
     } else {
       setSearchResults([]);
+      setIsOpen(false);
     }
 
     return () => {
@@ -61,7 +77,7 @@ export const UserSearchSelect: React.FC<UserSearchSelectProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, selectedRegion]);
+  }, [searchTerm, selectedRegion, selectedUserData]);
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -98,6 +114,7 @@ export const UserSearchSelect: React.FC<UserSearchSelectProps> = ({
     onUserSelect(user.dni);
     setSearchTerm(user.nombres);
     setIsOpen(false);
+    setSearchResults([]);
   };
 
   const handleClear = () => {

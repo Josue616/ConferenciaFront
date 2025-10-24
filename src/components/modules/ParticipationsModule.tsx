@@ -14,6 +14,26 @@ import { participationsApi, conferencesApi, regionsApi, csvExportApi } from '../
 import { UserSearchSelect } from '../ui/UserSearchSelect';
 
 const ITEMS_PER_PAGE = 10;
+const SERVICE_OPTIONS = [
+  { value: 'Alimentacion', label: 'Alimentación' },
+  { value: 'Musica', label: 'Música' },
+  { value: 'Staff', label: 'Staff' },
+  { value: 'Ponente', label: 'Ponente' },
+  { value: 'Participante', label: 'Participante' },
+  { value: 'Infantil', label: 'Infantil' },
+  { value: 'Seguridad', label: 'Seguridad' }
+];
+const SERVICE_BADGE_VARIANTS: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
+  Alimentacion: 'warning',
+  Musica: 'success',
+  Staff: 'secondary',
+  Ponente: 'primary',
+  Participante: 'primary',
+  Infantil: 'secondary',
+  Seguridad: 'danger',
+  Cocina: 'warning',
+  Infantes: 'secondary'
+};
 
 export const ParticipationsModule: React.FC = () => {
   const { user } = useAuth();
@@ -32,8 +52,13 @@ export const ParticipationsModule: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [participationToDelete, setParticipationToDelete] = useState<Participation | null>(null);
-  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportConferenceId, setExportConferenceId] = useState('');
+  const [exportRegionId, setExportRegionId] = useState('');
+  const [exportAllRegions, setExportAllRegions] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState('');
   const [formData, setFormData] = useState<ParticipationRequest>({
     dniUsuario: '',
     idConferencia: '',
@@ -155,16 +180,54 @@ export const ParticipationsModule: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
-    setExporting(true);
-    setError('');
-    
+    // Abrir modal de exportación en lugar de exportar directamente
+    setExportError('');
+    // Pre-select a conference if there's only one, otherwise leave empty
+    setExportConferenceId('');
+    // Si el usuario no es Admin, intentar asignar su región (por nombre)
+    if (!isAdmin) {
+      const encargadoRegion = regions.find(r => r.nombres === user?.nombreRegion);
+      if (encargadoRegion) {
+        setExportRegionId(encargadoRegion.id);
+      }
+    } else {
+      setExportRegionId('');
+    }
+    setExportAllRegions(isAdmin ? false : false);
+    setIsExportModalOpen(true);
+  };
+
+  const handleExportSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setExportLoading(true);
+    setExportError('');
+
     try {
-      await csvExportApi.exportParticipations();
-    } catch (error) {
-      console.error('Error exporting CSV:', error);
-      setError('Error al exportar los datos. Por favor, intenta nuevamente.');
+      if (!exportConferenceId) {
+        setExportError('Selecciona una conferencia');
+        setExportLoading(false);
+        return;
+      }
+
+      // For encargados: ensure region is set
+      let regionIdToSend = exportRegionId;
+      if (!isAdmin) {
+        const encargadoRegion = regions.find(r => r.nombres === user?.nombreRegion);
+        if (!encargadoRegion) {
+          setExportError('No se pudo determinar tu región. Contacta al administrador.');
+          setExportLoading(false);
+          return;
+        }
+        regionIdToSend = encargadoRegion.id;
+      }
+
+      await csvExportApi.exportParticipations(exportConferenceId, regionIdToSend, exportAllRegions);
+      setIsExportModalOpen(false);
+    } catch (err) {
+      console.error('Error exporting CSV:', err);
+      setExportError('Error al exportar los datos. Por favor, intenta nuevamente.');
     } finally {
-      setExporting(false);
+      setExportLoading(false);
     }
   };
 
@@ -201,10 +264,8 @@ export const ParticipationsModule: React.FC = () => {
             onClick={handleExportCSV}
             variant="secondary"
             icon={Download}
-            loading={exporting}
-            disabled={exporting}
           >
-            {exporting ? 'Exportando...' : 'Exportar CSV'}
+            Exportar CSV
           </Button>
           <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
             Nueva Participación
@@ -322,12 +383,7 @@ export const ParticipationsModule: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={
-                      participation.servicio === 'Participante' ? 'primary' :
-                      participation.servicio === 'Musica' ? 'success' :
-                      participation.servicio === 'Cocina' ? 'warning' :
-                      participation.servicio === 'Infantes' ? 'secondary' : 'primary'
-                    }>
+                    <Badge variant={SERVICE_BADGE_VARIANTS[participation.servicio] ?? 'primary'}>
                       {participation.servicio}
                     </Badge>
                   </td>
@@ -419,6 +475,25 @@ export const ParticipationsModule: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Servicio <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.servicio}
+              onChange={(e) => setFormData(prev => ({ ...prev, servicio: e.target.value }))}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+              required
+              disabled={submitting}
+            >
+              {SERVICE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Conferencia <span className="text-red-500">*</span>
             </label>
             <select
@@ -437,7 +512,7 @@ export const ParticipationsModule: React.FC = () => {
           </div>
 
           {/* Opciones de alimentación */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/*<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="inline-flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
               <input
                 type="checkbox"
@@ -458,7 +533,7 @@ export const ParticipationsModule: React.FC = () => {
               />
               <span className="text-sm text-gray-700">Cena</span>
             </label>
-          </div>
+          </div>*/}
 
           {/* Conference Info */}
           {formData.idConferencia && (
@@ -507,6 +582,120 @@ export const ParticipationsModule: React.FC = () => {
               className="w-full sm:w-auto"
             >
               Crear Participación
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Export CSV Modal */}
+      <Modal
+        isOpen={isExportModalOpen}
+        onClose={() => { if (!exportLoading) setIsExportModalOpen(false); }}
+        title="Exportar Participaciones a CSV"
+        size="md"
+      >
+        <form onSubmit={handleExportSubmit} className="space-y-6">
+          {exportError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              <p className="text-sm text-red-700">{exportError}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Conferencia <span className="text-red-500">*</span></label>
+            <select
+              value={exportConferenceId}
+              onChange={(e) => setExportConferenceId(e.target.value)}
+              className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+              required
+              disabled={exportLoading}
+            >
+              <option value="">Seleccionar conferencia</option>
+              {conferences.map(conf => (
+                <option key={conf.id} value={conf.id}>{conf.nombres} - {conf.nombreRegion}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Región</label>
+            {isAdmin ? (
+              <div className="space-y-2">
+                <label className="inline-flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={exportAllRegions}
+                    onChange={(e) => setExportAllRegions(e.target.checked)}
+                    disabled={exportLoading}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Todas las regiones</span>
+                </label>
+
+                <select
+                  value={exportRegionId}
+                  onChange={(e) => setExportRegionId(e.target.value)}
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                  disabled={exportLoading || exportAllRegions}
+                >
+                  <option value="">Seleccionar región (opcional)</option>
+                  {regions.map(r => (
+                    <option key={r.id} value={r.id}>{r.nombres}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <select
+                  value={exportRegionId}
+                  onChange={(e) => setExportRegionId(e.target.value)}
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
+                  disabled
+                >
+                  {(() => {
+                    const encargadoRegion = regions.find(r => r.nombres === user?.nombreRegion);
+                    return encargadoRegion ? (
+                      <option value={encargadoRegion.id}>{encargadoRegion.nombres}</option>
+                    ) : (
+                      <option value="">No se encontró tu región</option>
+                    );
+                  })()}
+                </select>
+                <p className="text-xs text-gray-500 mt-2">Como encargado, solo puedes exportar datos de tu región.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Loading overlay inside modal */}
+          {exportLoading && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center space-x-3">
+              <LoadingSpinner />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Generando CSV — por favor espera...</p>
+                <p className="text-sm text-yellow-700">El archivo será descargado automáticamente cuando esté listo.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsExportModalOpen(false)}
+              disabled={exportLoading}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              loading={exportLoading}
+              disabled={exportLoading}
+              icon={Download}
+              className="w-full sm:w-auto"
+            >
+              Exportar CSV
             </Button>
           </div>
         </form>

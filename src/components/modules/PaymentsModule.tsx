@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Search, ExternalLink, Calendar, Upload, User, MapPin, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, X, Edit3, RotateCcw, Crop as CropIcon } from 'lucide-react';
+import { CreditCard, Search, ExternalLink, Calendar, Upload, User, Plus, Image, CheckCircle, AlertCircle, Eye, Trash2, Edit3, RotateCcw, Crop as CropIcon } from 'lucide-react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Card } from '../ui/Card';
@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
-import { Payment, User as UserType, Region } from '../../types';
+import { Payment, Region, Conference } from '../../types';
 import { paymentsApi, regionsApi, conferencesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserSearchSelect } from '../ui/UserSearchSelect';
@@ -41,7 +41,6 @@ export const PaymentsModule: React.FC = () => {
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +68,9 @@ export const PaymentsModule: React.FC = () => {
   const [imgRef, setImgRef] = useState<HTMLImageElement>();
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const parsedPaymentAmount = parseFloat(paymentAmount);
+  const isPaymentAmountValid = !Number.isNaN(parsedPaymentAmount) && parsedPaymentAmount > 0;
 
   useEffect(() => {
     loadData();
@@ -121,7 +122,7 @@ export const PaymentsModule: React.FC = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    handleFileProcess(file);
+    handleFileProcess(file ?? null);
   };
 
   const handleFileProcess = (file: File | null) => {
@@ -233,7 +234,9 @@ export const PaymentsModule: React.FC = () => {
   };
 
   const handleUploadAndRegister = async () => {
-    if (!selectedFile || !selectedUser || !selectedConference) return;
+    if (!selectedFile || !selectedUser || !selectedConference || !isPaymentAmountValid) {
+      return;
+    }
     
     setUploading(true);
     setError('');
@@ -244,7 +247,7 @@ export const PaymentsModule: React.FC = () => {
       setUploadedImageUrl(imageUrl);
       
       // Step 2: Register payment in API
-      await paymentsApi.create(selectedUser, selectedConference, imageUrl, paymentAmount);
+  await paymentsApi.create(selectedUser, selectedConference, imageUrl, parsedPaymentAmount);
       
       setUploadSuccess(true);
       await loadData(); // Reload payments
@@ -309,7 +312,7 @@ export const PaymentsModule: React.FC = () => {
       y: 5
     });
     setCompletedCrop(undefined);
-    setPaymentAmount(0);
+  setPaymentAmount('');
   };
 
   const formatDate = (dateString: string) => {
@@ -580,7 +583,7 @@ export const PaymentsModule: React.FC = () => {
                       min="0"
                       step="0.01"
                       value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
                       className="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2"
                       placeholder="0.00"
                       required
@@ -701,7 +704,7 @@ export const PaymentsModule: React.FC = () => {
                         minHeight={50}
                       >
                         <img
-                          ref={setImgRef}
+                          ref={(element) => setImgRef(element ?? undefined)}
                           alt="Crop me"
                           src={previewUrl}
                           style={{ maxHeight: '400px', maxWidth: '100%' }}
@@ -748,7 +751,13 @@ export const PaymentsModule: React.FC = () => {
                 <Button 
                   onClick={handleUploadAndRegister}
                   loading={uploading}
-                  disabled={uploading || !selectedFile || !selectedUser || !selectedConference || paymentAmount <= 0}
+                  disabled={
+                    uploading ||
+                    !selectedFile ||
+                    !selectedUser ||
+                    !selectedConference ||
+                    !isPaymentAmountValid
+                  }
                   icon={Upload}
                   className="w-full sm:w-auto min-w-[140px]"
                 >

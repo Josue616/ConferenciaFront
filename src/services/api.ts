@@ -469,52 +469,53 @@ export const participationsApi = {
 
 // CSV Export utilities
 export const csvExportApi = {
-  exportParticipations: async (): Promise<void> => {
+  // Export participations by conference and optional region using server CSV endpoint
+  exportParticipations: async (idConferencia: string, idRegion?: string, todasLasRegiones: boolean = false): Promise<void> => {
     try {
       const token = localStorage.getItem('auth_token');
-      
-      // Get all participations
-      const participations = await participationsApi.getAll();
-      
-      // Get detailed user info for each participation
-      const participationsWithDetails = await Promise.all(
-        participations.map(async (participation) => {
-          try {
-            const userResponse = await fetch(`${API_BASE_URL}/Usuarios/${participation.dniUsuario}`, {
-              headers: {
-                'accept': 'text/plain',
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
-              return {
-                ...participation,
-                userDetails: userData
-              };
-            } else {
-              return {
-                ...participation,
-                userDetails: null
-              };
-            }
-          } catch (error) {
-            console.error(`Error fetching user ${participation.dniUsuario}:`, error);
-            return {
-              ...participation,
-              userDetails: null
-            };
-          }
-        })
-      );
-      
-      // Generate CSV content
-      const csvContent = generateParticipationsCSV(participationsWithDetails);
-      
-      // Download CSV file
-      downloadCSV(csvContent, 'participaciones_completo.csv');
-      
+
+      let url = `${API_BASE_URL}/Participaciones/conferencia/${idConferencia}/usuarios/region?todasLasRegiones=${todasLasRegiones}`;
+      if (idRegion && !todasLasRegiones) {
+        url += `&idRegion=${encodeURIComponent(idRegion)}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': 'text/plain',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al exportar participaciones desde el servidor');
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+
+      // If server returned CSV/text, download it directly
+      if (contentType.includes('text') || contentType.includes('csv')) {
+        const csvText = await response.text();
+        const filenameParts = ['participaciones', idConferencia];
+        if (todasLasRegiones) filenameParts.push('todas-regiones');
+        else if (idRegion) filenameParts.push(idRegion);
+        const filename = `${filenameParts.join('_')}.csv`;
+        downloadCSV(csvText, filename);
+        return;
+      }
+
+      // Otherwise assume JSON array and build CSV client-side
+      const json = await response.json();
+      if (!Array.isArray(json)) {
+        throw new Error('Respuesta inesperada al exportar participaciones');
+      }
+
+      const csvTextFromJson = generateParticipationsCSVFromJson(json);
+      const filenameParts = ['participaciones', idConferencia];
+      if (todasLasRegiones) filenameParts.push('todas-regiones');
+      else if (idRegion) filenameParts.push(idRegion);
+      const filename = `${filenameParts.join('_')}.csv`;
+      downloadCSV(csvTextFromJson, filename);
     } catch (error) {
       console.error('Error exporting participations:', error);
       throw error;
@@ -522,56 +523,7 @@ export const csvExportApi = {
   }
 };
 
-const generateParticipationsCSV = (participations: any[]): string => {
-  // CSV Headers
-  const headers = [
-    'ID Participación',
-    'DNI Usuario',
-    'Nombre Completo',
-    'Sexo',
-    'Fecha Nacimiento',
-    'Teléfono',
-    'Rol Usuario',
-    'Región Usuario',
-    'ID Conferencia',
-    'Nombre Conferencia',
-  'Almuerzo',
-  'Cena',
-    'Fecha Inscripción',
-    'Hora Inscripción'
-  ];
-  
-  // Generate CSV rows
-  const rows = participations.map(participation => {
-    const user = participation.userDetails;
-    const fechaInscripcion = new Date(participation.fecha);
-    
-    return [
-      participation.id,
-      participation.dniUsuario,
-      participation.nombreUsuario,
-      user ? (user.sexo ? 'Masculino' : 'Femenino') : 'N/A',
-      user ? new Date(user.fechaNacimiento).toLocaleDateString('es-ES') : 'N/A',
-      user ? user.telefono : 'N/A',
-      user ? user.rol : 'N/A',
-      user ? user.region.nombres : 'N/A',
-      participation.idConferencia,
-      participation.nombreConferencia,
-  participation.almuerzo ? 'Sí' : 'No',
-  participation.cena ? 'Sí' : 'No',
-      fechaInscripcion.toLocaleDateString('es-ES'),
-      fechaInscripcion.toLocaleTimeString('es-ES')
-    ];
-  });
-  
-  // Combine headers and rows
-  const csvData = [headers, ...rows];
-  
-  // Convert to CSV string
-  return csvData.map(row => 
-    row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-  ).join('\n');
-};
+// NOTE: Server-side CSV export endpoint is used. Client-side CSV generator removed.
 
 const downloadCSV = (csvContent: string, filename: string): void => {
   // Add BOM for proper UTF-8 encoding in Excel
@@ -593,6 +545,45 @@ const downloadCSV = (csvContent: string, filename: string): void => {
   
   // Clean up
   URL.revokeObjectURL(url);
+};
+
+const generateParticipationsCSVFromJson = (participations: any[]): string => {
+  const headers = [
+    'ID Participación',
+    'DNI Usuario',
+    'Nombre Usuario',
+    'ID Región Usuario',
+    'ID Conferencia',
+    'Nombre Conferencia',
+    'Servicio',
+    'Almuerzo',
+    'Cena',
+    'Fecha Inscripción',
+    'Hora Inscripción'
+  ];
+
+  const rows = participations.map(p => {
+    const fecha = p.fecha ? new Date(p.fecha) : null;
+    const fechaStr = fecha ? fecha.toLocaleDateString('es-ES') : '';
+    const horaStr = fecha ? fecha.toLocaleTimeString('es-ES') : '';
+
+    return [
+      p.id || '',
+      p.dniUsuario || '',
+      p.nombreUsuario || '',
+      p.idRegionUsuario || '',
+      p.idConferencia || '',
+      p.nombreConferencia || '',
+      p.servicio || '',
+      (p.almuerzo ? 'Sí' : 'No'),
+      (p.cena ? 'Sí' : 'No'),
+      fechaStr,
+      horaStr
+    ];
+  });
+
+  const csvData = [headers, ...rows];
+  return csvData.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
 };
 
 // Reports API
