@@ -32,14 +32,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { id: 'conferences', label: 'Conferencias', icon: Calendar, adminOnly: true },
-  { id: 'conferenceReports', label: 'Reportes', icon: BarChart3, adminOnly: true },
+    { id: 'conferenceReports', label: 'Reportes', icon: BarChart3, adminOnly: true },
     { id: 'users', label: 'Usuarios', icon: Users, adminOnly: false },
     { id: 'participations', label: 'Participaciones', icon: UserCheck, adminOnly: false },
     { id: 'payments', label: 'Pagos', icon: CreditCard, adminOnly: false },
     { id: 'regions', label: 'Regiones', icon: MapPin, adminOnly: true },
+    { id: 'investors', label: 'Inversores', icon: Heart, specialAccess: true },
   ];
 
-  const visibleItems = menuItems.filter(item => !item.adminOnly || isAdmin);
+  const visibleItems = menuItems.filter(item => 
+    (!item.adminOnly || isAdmin) && 
+    (!item.specialAccess || (isAdmin && user?.nombres === 'Alexander Herrada Toledo'))
+  );
 
   return (
     <div className={`bg-gradient-to-b from-blue-50 to-indigo-100 border-r border-blue-200 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>

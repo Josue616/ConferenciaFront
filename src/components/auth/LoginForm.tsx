@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { LogIn, User, Lock, Eye, EyeOff, Heart, Calendar } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
+import { LogIn, User, Lock, Eye, EyeOff, Heart } from 'lucide-react';
 import { authApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, User as UserIcon, UserX, Trash2 } from 'lucide-react';
+import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -224,18 +224,6 @@ export const UsersModule: React.FC = () => {
       return ['Encargado', 'Oyente'];
     }
     return ['Oyente'];
-  };
-
-  const getUserIcon = (sexo: boolean) => {
-    return sexo ? (
-      <UserIcon className="w-5 h-5 text-blue-600" />
-    ) : (
-      <UserX className="w-5 h-5 text-pink-600" />
-    );
-  };
-
-  const getUserIconBg = (sexo: boolean) => {
-    return sexo ? 'bg-blue-100' : 'bg-pink-100';
   };
 
   const isPasswordRequired = formData.rol !== 'Oyente';
@@ -588,6 +576,7 @@ export const UsersModule: React.FC = () => {
       </Card>
 
       {/* Single table - removed */}
+      {/*
       {false && <Card padding="sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -696,6 +685,7 @@ export const UsersModule: React.FC = () => {
           </table>
         </div>
       </Card>}
+      */}
 
       {filteredUsers.length === 0 && !loading && (
         <Card className="text-center py-12">

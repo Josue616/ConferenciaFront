@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Estilos para impresión de boletas */
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4 portrait;
+  }
+  
+  body * {
+    visibility: hidden;
+  }
+  
+  #boleta-print,
+  #boleta-print * {
+    visibility: visible;
+  }
+  
+  #boleta-print {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 800px;
+    padding: 20px;
+  }
+  
+  .print\:hidden {
+    display: none !important;
+  }
+}

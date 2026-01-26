@@ -307,3 +307,92 @@ export interface NextConferenceMissingPaymentParticipant {
   nombreConferencia: string;
   servicio: string;
 }
+
+// Inversores
+export interface Inversor {
+  id: string;
+  nombre: string;
+  idRegion: string;
+  nombreRegion?: string;
+  region?: {
+    id: string;
+    nombres: string;
+  };
+}
+
+export interface InversorRequest {
+  nombre: string;
+  idRegion: string;
+}
+
+export interface PagoInversor {
+  id: string;
+  codigo?: string; // "INV" o "MIC"
+  serie?: string; // Formato: 0000MMCC
+  monto: number;
+  currency: number | string; // 0: Dolares, 1: Soles, 2: Euros or string
+  idTipo: string;
+  idInversor: string;
+  nombreInversor?: string;
+  esMicroinversionista?: boolean;
+  fechaCreacion: string;
+  tipo?: {
+    id: string;
+    esMicroinversionista: boolean;
+  };
+  inversor?: {
+    id: string;
+    nombre: string;
+  };
+}
+
+export interface PagoInversorRequest {
+  idInversor: string;
+  monto: number;
+  currency: number; // 0: Dolares, 1: Soles, 2: Euros
+  idTipo: string;
+}
+
+export interface Tipo {
+  id: string;
+  esMicroinversionista: boolean;
+}
+
+export interface ReporteInversorDto {
+  inversorId: string;
+  nombreInversor: string;
+  nombreRegion: string;
+  numeroPagosMicroinversionista: number;
+  pagosMicroinversionista: {
+    pagoId: string;
+    monto: number;
+    currency: string;
+    fechaCreacion: string;
+  }[];
+  numeroPagosInversionista: number;
+  pagosInversionista: {
+    pagoId: string;
+    monto: number;
+    currency: string;
+    fechaCreacion: string;
+  }[];
+  totalSoles: number;
+  totalDolares: number;
+  totalEuros: number;
+  estado: string;
+}
+
+export interface ReporteGeneralDto {
+  mes: number;
+  anio: number;
+  tipoFiltro: string;
+  totalSoles: number;
+  totalDolares: number;
+  totalEuros: number;
+  totalSolesMesAnterior: number;
+  totalDolaresMesAnterior: number;
+  totalEurosMesAnterior: number;
+  porcentajeCambioSoles: number | null;
+  porcentajeCambioDolares: number | null;
+  porcentajeCambioEuros: number | null;
+}

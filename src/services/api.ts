@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport, Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, ReporteInversorDto, ReporteGeneralDto } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
@@ -547,7 +547,7 @@ const downloadCSV = (csvContent: string, filename: string): void => {
   URL.revokeObjectURL(url);
 };
 
-const generateParticipationsCSVFromJson = (participations: any[]): string => {
+const generateParticipationsCSVFromJson = (participations: ParticipationWithPayment[]): string => {
   const headers = [
     'ID Participación',
     'DNI Usuario',
@@ -914,6 +914,268 @@ export const paymentsApi = {
       }
     } catch (error) {
       console.error('Error deleting payment:', error);
+      throw error;
+    }
+  }
+};
+
+// Investors API
+export const investorsApi = {
+  // Inversores
+  createInversor: async (inversor: InversorRequest): Promise<Inversor> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/inversores`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(inversor)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating inversor:', error);
+      throw error;
+    }
+  },
+
+  getAllInversores: async (): Promise<Inversor[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/inversores`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener inversores');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting inversores:', error);
+      throw error;
+    }
+  },
+
+  getInversorById: async (id: string): Promise<Inversor> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/inversores/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting inversor:', error);
+      throw error;
+    }
+  },
+
+  searchInversores: async (nombre: string): Promise<Inversor[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/inversores/search?nombre=${encodeURIComponent(nombre)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al buscar inversores');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching inversores:', error);
+      throw error;
+    }
+  },
+
+  getInversoresByRegions: async (regions: string[]): Promise<Inversor[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const regionsParam = regions.join(',');
+      const response = await fetch(`${API_BASE_URL}/inversores/byregions?regions=${regionsParam}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al filtrar inversores por regiones');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error filtering inversores by regions:', error);
+      throw error;
+    }
+  },
+
+  // Pagos de Inversores
+  createPagoInversor: async (pago: PagoInversorRequest): Promise<PagoInversor> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/pagoinversores`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(pago)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear pago de inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating pago inversor:', error);
+      throw error;
+    }
+  },
+
+  getAllPagosInversores: async (): Promise<PagoInversor[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/pagoinversores`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener pagos de inversores');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting pagos inversores:', error);
+      throw error;
+    }
+  },
+
+  getPagoInversorById: async (id: string): Promise<PagoInversor> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/pagoinversores/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener pago de inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting pago inversor:', error);
+      throw error;
+    }
+  },
+
+  // Tipos
+  getAllTipos: async (): Promise<Tipo[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/tipos`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener tipos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting tipos:', error);
+      throw error;
+    }
+  },
+
+  getTipoById: async (id: string): Promise<Tipo> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/tipos/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener tipo');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting tipo:', error);
+      throw error;
+    }
+  },
+
+  // Reportes
+  getReporteInversor: async (inversorId?: string): Promise<ReporteInversorDto[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const body = inversorId ? { inversorId } : {};
+      const response = await fetch(`${API_BASE_URL}/reportesinversores/inversor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte de inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting reporte inversor:', error);
+      throw error;
+    }
+  },
+
+  getReporteGeneral: async (tipo: string, mes?: number, anio?: number): Promise<ReporteGeneralDto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const body = { tipo, mes, anio };
+      const response = await fetch(`${API_BASE_URL}/reportesinversores/general`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte general');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting reporte general:', error);
       throw error;
     }
   }

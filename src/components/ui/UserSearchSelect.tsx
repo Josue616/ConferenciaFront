@@ -77,7 +77,7 @@ export const UserSearchSelect: React.FC<UserSearchSelectProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, selectedRegion, selectedUserData]);
+  }, [searchTerm, selectedRegion, selectedUserData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {

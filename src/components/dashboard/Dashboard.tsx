@@ -3,7 +3,7 @@ import { DashboardStats } from './DashboardStats';
 import { RecentActivity } from './RecentActivity';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
-import { Heart, Calendar, Users, TrendingUp } from 'lucide-react';
+import { Heart, Calendar, Users } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
