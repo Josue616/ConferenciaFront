@@ -40,3 +40,16 @@ export const formatDateForAPI = (dateString: string): string => {
   if (!dateString) return '';
   return dateString; // Los inputs date ya están en formato YYYY-MM-DD
 };
+
+/**
+ * Formatea una fecha ISO para mostrar en formato local
+ */
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};

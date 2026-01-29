@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, TrendingUp, TrendingDown, Filter, FileText, X } from 'lucide-react';
+import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, Filter, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, ReporteInversorDto, ReporteGeneralDto, Region } from '../../types';
+import { Pagination } from '../ui/Pagination';
+import { Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, Region } from '../../types';
 import { investorsApi, regionsApi } from '../../services/api';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { ReportesInversoresModule } from './InvestorReportsModule';
+import { GastosModule } from './GastosModule';
 
 export const InvestorsModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'tipos' | 'reportes'>('inversores');
+  const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'gastos' | 'tipos' | 'reportes'>('inversores');
 
   return (
     <div className="space-y-6">
@@ -45,6 +47,17 @@ export const InvestorsModule: React.FC = () => {
             Pagos
           </button>
           <button
+            onClick={() => setActiveTab('gastos')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'gastos'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <FileText className="w-4 h-4 inline mr-2" />
+            Gastos
+          </button>
+          <button
             onClick={() => setActiveTab('tipos')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'tipos'
@@ -72,6 +85,7 @@ export const InvestorsModule: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'inversores' && <InversoresTab />}
       {activeTab === 'pagos' && <PagosTab />}
+      {activeTab === 'gastos' && <GastosTab />}
       {activeTab === 'tipos' && <TiposTab />}
       {activeTab === 'reportes' && <ReportesTab />}
     </div>
@@ -89,9 +103,16 @@ const InversoresTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInversor, setEditingInversor] = useState<Inversor | null>(null);
   const [error, setError] = useState('');
+  
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const [formData, setFormData] = useState<InversorRequest>({
     nombre: '',
-    idRegion: ''
+    idRegion: '',
+    montoMensualCuota: 0,
+    currencyCuota: 1 // Default: Soles
   });
 
   useEffect(() => {
@@ -120,9 +141,7 @@ const InversoresTab: React.FC = () => {
     setSubmitting(true);
     try {
       if (editingInversor) {
-        // Note: API doesn't have update endpoint, so we'll recreate
-        await investorsApi.createInversor(formData);
-        setInversores(prev => prev.filter(inv => inv.id !== editingInversor.id));
+        await investorsApi.updateInversor(editingInversor.id, formData);
       } else {
         await investorsApi.createInversor(formData);
       }
@@ -138,8 +157,45 @@ const InversoresTab: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ nombre: '', idRegion: '' });
+    setFormData({ nombre: '', idRegion: '', montoMensualCuota: 0, currencyCuota: 1 });
     setEditingInversor(null);
+  };
+
+  const getCurrencyName = (currency: number | string): string => {
+    if (typeof currency === 'string') {
+      return currency; // Ya es el nombre
+    }
+    switch (currency) {
+      case 0: return 'Dólares';
+      case 1: return 'Soles';
+      case 2: return 'Euros';
+      default: return 'N/A';
+    }
+  };
+
+  const getCurrencyVariant = (currency: number | string): 'primary' | 'success' | 'warning' => {
+    const currencyName = typeof currency === 'string' ? currency : getCurrencyName(currency);
+    switch (currencyName) {
+      case 'Dólares':
+      case 'Dolares':
+        return 'success'; // Dólares - verde
+      case 'Soles':
+        return 'primary'; // Soles - azul
+      case 'Euros':
+        return 'warning'; // Euros - amarillo
+      default:
+        return 'primary';
+    }
+  };
+
+  const currencyToString = (currency: number | string): string => {
+    if (typeof currency === 'string') return currency;
+    switch (currency) {
+      case 0: return 'Dolares';
+      case 1: return 'Soles';
+      case 2: return 'Euros';
+      default: return 'Soles';
+    }
   };
 
   const openCreateModal = () => {
@@ -151,7 +207,9 @@ const InversoresTab: React.FC = () => {
     setEditingInversor(inversor);
     setFormData({
       nombre: inversor.nombre,
-      idRegion: inversor.idRegion
+      idRegion: inversor.idRegion,
+      montoMensualCuota: inversor.montoMensualCuota,
+      currencyCuota: currencyToString(inversor.currencyCuota)
     });
     setIsModalOpen(true);
   };
@@ -161,6 +219,17 @@ const InversoresTab: React.FC = () => {
     const matchesRegion = !selectedRegion || inversor.idRegion === selectedRegion;
     return matchesSearch && matchesRegion;
   });
+
+  // Paginación aplicada DESPUÉS del filtrado
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentInversores = filteredInversores.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredInversores.length / itemsPerPage);
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedRegion]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -179,7 +248,7 @@ const InversoresTab: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <div className="flex-1">
             <Input
               placeholder="Buscar por nombre..."
@@ -200,6 +269,24 @@ const InversoresTab: React.FC = () => {
               ))}
             </select>
           </div>
+          <div className="w-40">
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 por página</option>
+              <option value={10}>10 por página</option>
+              <option value={25}>25 por página</option>
+              <option value={50}>50 por página</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-2 text-sm text-gray-600">
+          Mostrando {filteredInversores.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredInversores.length)} de {filteredInversores.length} inversores
         </div>
       </Card>
 
@@ -222,20 +309,36 @@ const InversoresTab: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Región
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cuota Mensual
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Moneda
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredInversores.map((inversor) => (
+              {currentInversores.map((inversor) => (
                 <tr key={inversor.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {inversor.nombre}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    {inversor.nombreRegion || inversor.region?.nombres || 'Sin región'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      {inversor.nombreRegion || inversor.region?.nombres || 'Sin región'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                    {inversor.montoMensualCuota?.toFixed(2) || '0.00'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <Badge variant={getCurrencyVariant(inversor.currencyCuota)}>
+                      {getCurrencyName(inversor.currencyCuota)}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Button
@@ -252,6 +355,19 @@ const InversoresTab: React.FC = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Paginación Inversores */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={filteredInversores.length}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Modal */}
@@ -286,6 +402,36 @@ const InversoresTab: React.FC = () => {
                 <option key={region.id} value={region.id}>{region.nombres}</option>
               ))}
             </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cuota Mensual
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.montoMensualCuota}
+                onChange={(e) => setFormData(prev => ({ ...prev, montoMensualCuota: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Moneda de Cuota
+              </label>
+              <select
+                value={formData.currencyCuota}
+                onChange={(e) => setFormData(prev => ({ ...prev, currencyCuota: parseInt(e.target.value) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value={1}>Soles</option>
+                <option value={0}>Dólares</option>
+                <option value={2}>Euros</option>
+              </select>
+            </div>
           </div>
           <div className="flex justify-end gap-3">
             <Button
@@ -333,13 +479,16 @@ const PagosTab: React.FC = () => {
   const [filterFechaInicio, setFilterFechaInicio] = useState('');
   const [filterFechaFin, setFilterFechaFin] = useState('');
   
+  // Paginación
+  const [currentPagePagos, setCurrentPagePagos] = useState(1);
+  const [itemsPerPagePagos, setItemsPerPagePagos] = useState(10);
+  
   // Boleta
   const [boletaPago, setBoletaPago] = useState<PagoInversor | null>(null);
   const [isBoletaModalOpen, setIsBoletaModalOpen] = useState(false);
   
   // Búsqueda de inversor en formulario
   const [inversorSearchTerm, setInversorSearchTerm] = useState('');
-  const [inversorNombreSeleccionado, setInversorNombreSeleccionado] = useState('');
   const [showInversorDropdown, setShowInversorDropdown] = useState(false);
 
   useEffect(() => {
@@ -386,7 +535,6 @@ const PagosTab: React.FC = () => {
   const resetForm = () => {
     setFormData({ idInversor: '', monto: 0, currency: 0, idTipo: '' });
     setInversorSearchTerm('');
-    setInversorNombreSeleccionado('');
     setShowInversorDropdown(false);
   };
 
@@ -400,9 +548,11 @@ const PagosTab: React.FC = () => {
     }
   };
 
-  const getCurrencyName = (currency: number | string) => {
-    const num = typeof currency === 'string' ? parseInt(currency) : currency;
-    switch (num) {
+  const getCurrencyName = (currency: number | string): string => {
+    if (typeof currency === 'string') {
+      return currency; // Ya es el nombre como "Dolares", "Soles", "Euros"
+    }
+    switch (currency) {
       case 0: return 'Dólares';
       case 1: return 'Soles';
       case 2: return 'Euros';
@@ -411,8 +561,17 @@ const PagosTab: React.FC = () => {
   };
 
   const getCurrencySymbol = (currency: number | string): string => {
-    const num = typeof currency === 'string' ? parseInt(currency) : currency;
-    switch (num) {
+    if (typeof currency === 'string') {
+      // Mapear string a símbolo
+      const symbolMap: Record<string, string> = {
+        'Dolares': '$',
+        'Dólares': '$',
+        'Soles': 'S/',
+        'Euros': '€'
+      };
+      return symbolMap[currency] || '';
+    }
+    switch (currency) {
       case 0: return '$';
       case 1: return 'S/';
       case 2: return '€';
@@ -442,7 +601,6 @@ const PagosTab: React.FC = () => {
 
   const handleSelectInversor = (inversor: Inversor) => {
     setFormData(prev => ({ ...prev, idInversor: inversor.id }));
-    setInversorNombreSeleccionado(inversor.nombre);
     setInversorSearchTerm(inversor.nombre);
     setShowInversorDropdown(false);
   };
@@ -469,6 +627,17 @@ const PagosTab: React.FC = () => {
     
     return matchesInversor && matchesCurrency && matchesTipo && matchesFechas;
   });
+
+  // Paginación aplicada DESPUÉS del filtrado
+  const indexOfLastPago = currentPagePagos * itemsPerPagePagos;
+  const indexOfFirstPago = indexOfLastPago - itemsPerPagePagos;
+  const currentPagos = filteredPagos.slice(indexOfFirstPago, indexOfLastPago);
+  const totalPagesPagos = Math.ceil(filteredPagos.length / itemsPerPagePagos);
+
+  // Resetear a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPagePagos(1);
+  }, [searchInversor, filterCurrency, filterTipo, filterFechaInicio, filterFechaFin]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -550,6 +719,26 @@ const PagosTab: React.FC = () => {
             />
           </div>
         </div>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t">
+          <div className="text-sm text-gray-600">
+            Mostrando {filteredPagos.length === 0 ? 0 : indexOfFirstPago + 1} - {Math.min(indexOfLastPago, filteredPagos.length)} de {filteredPagos.length} pagos
+          </div>
+          <div className="w-40">
+            <select
+              value={itemsPerPagePagos}
+              onChange={(e) => {
+                setItemsPerPagePagos(Number(e.target.value));
+                setCurrentPagePagos(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5 por página</option>
+              <option value={10}>10 por página</option>
+              <option value={25}>25 por página</option>
+              <option value={50}>50 por página</option>
+            </select>
+          </div>
+        </div>
       </Card>
 
       {/* Table */}
@@ -579,7 +768,7 @@ const PagosTab: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPagos.map((pago) => (
+              {currentPagos.map((pago) => (
                 <tr key={pago.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {getInversorNombre(pago.idInversor)}
@@ -613,6 +802,19 @@ const PagosTab: React.FC = () => {
             </tbody>
           </table>
         </div>
+        
+        {/* Paginación Pagos */}
+        {totalPagesPagos > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200">
+            <Pagination
+              currentPage={currentPagePagos}
+              totalPages={totalPagesPagos}
+              onPageChange={setCurrentPagePagos}
+              itemsPerPage={itemsPerPagePagos}
+              totalItems={filteredPagos.length}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Modal */}
@@ -634,7 +836,6 @@ const PagosTab: React.FC = () => {
                   setShowInversorDropdown(true);
                   if (!e.target.value) {
                     setFormData(prev => ({ ...prev, idInversor: '' }));
-                    setInversorNombreSeleccionado('');
                   }
                 }}
                 onFocus={() => setShowInversorDropdown(true)}
@@ -895,32 +1096,18 @@ const TiposTab: React.FC = () => {
   );
 };
 
-// Reportes Tab Component
-const ReportesTab: React.FC = () => {
-  const [reporteInversor, setReporteInversor] = useState<ReporteInversorDto[]>([]);
-  const [reporteGeneral, setReporteGeneral] = useState<ReporteGeneralDto | null>(null);
-  const [inversores, setInversores] = useState<Inversor[]>([]);
-  const [selectedInversor, setSelectedInversor] = useState<string>('');
-  const [searchInversor, setSearchInversor] = useState('');
-  const [showReporteDropdown, setShowReporteDropdown] = useState(false);
-  const [error, setError] = useState('');
-  const [loadingReporteInversor, setLoadingReporteInversor] = useState(false);
-  const [tipoFiltro, setTipoFiltro] = useState('Ambos');
-  const [mes, setMes] = useState(new Date().getMonth() + 1);
-  const [anio, setAnio] = useState(new Date().getFullYear());
+// Gastos Tab Component - Reutiliza el módulo de Gastos
+const GastosTab: React.FC = () => {
+  return <GastosModule />;
+};
 
-  const loadReporteInversor = async (inversorId?: string) => {
-    setLoadingReporteInversor(true);
-    try {
-      const data = await investorsApi.getReporteInversor(inversorId);
-      setReporteInversor(data);
-    } catch (error) {
-      setError('Error al cargar reporte de inversor');
-      console.error('Error loading reporte inversor:', error);
-    } finally {
-      setLoadingReporteInversor(false);
-    }
-  };
+// Reportes Tab Component - Usa el nuevo módulo mejorado
+const ReportesTab: React.FC = () => {
+  const [inversores, setInversores] = useState<Inversor[]>([]);
+
+  useEffect(() => {
+    loadInversores();
+  }, []);
 
   const loadInversores = async () => {
     try {
@@ -931,309 +1118,5 @@ const ReportesTab: React.FC = () => {
     }
   };
 
-  const loadReporteGeneral = async () => {
-    try {
-      setError('');
-      const data = await investorsApi.getReporteGeneral(tipoFiltro, mes, anio);
-      console.log('Reporte general data:', data);
-      setReporteGeneral(data);
-    } catch (error) {
-      setError('Error al cargar reporte general');
-      console.error('Error loading reporte general:', error);
-      setReporteGeneral(null);
-    }
-  };
-
-  useEffect(() => {
-    loadInversores();
-  }, []);
-
-  useEffect(() => {
-    loadReporteGeneral();
-  }, [tipoFiltro, mes, anio]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'Excelente': return 'text-green-600';
-      case 'Bueno': return 'text-yellow-600';
-      case 'Aceptable': return 'text-orange-600';
-      case 'Malo': return 'text-red-600';
-      case 'Abandono': return 'text-gray-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getEstadoIcon = (estado: string) => {
-    switch (estado) {
-      case 'Excelente': return '✓';
-      case 'Bueno': return '⚠';
-      case 'Aceptable': return '⚡';
-      case 'Malo': return '✗';
-      case 'Abandono': return '🚫';
-      default: return '❓';
-    }
-  };
-
-  const cambioData = reporteGeneral ? [
-    { name: 'Soles', cambio: reporteGeneral.porcentajeCambioSoles ?? 0 },
-    { name: 'Dólares', cambio: reporteGeneral.porcentajeCambioDolares ?? 0 },
-    { name: 'Euros', cambio: reporteGeneral.porcentajeCambioEuros ?? 0 }
-  ] : [];
-
-  const hasReporteData = cambioData.some(d => Math.abs(d.cambio) > 0);
-
-  const handleBuscarReporte = async () => {
-    if (selectedInversor) {
-      await loadReporteInversor(selectedInversor);
-    } else {
-      setError('Por favor, seleccione un inversor');
-    }
-  };
-
-  const filteredInversoresReporte = inversores.filter(inv => 
-    inv.nombre.toLowerCase().includes(searchInversor.toLowerCase())
-  );
-
-  const handleSelectInversorReporte = (inversor: Inversor) => {
-    setSelectedInversor(inversor.id);
-    setSearchInversor(inversor.nombre);
-    setShowReporteDropdown(false);
-  };
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-900">Reportes de Inversores</h2>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">{error}</p>
-        </div>
-      )}
-
-      {/* Reporte General */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Reporte General</h3>
-        <div className="flex gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-            <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="Ambos">Ambos</option>
-              <option value="Microinversionistas">Microinversionistas</option>
-              <option value="Inversionistas">Inversionistas</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mes</label>
-            <select
-              value={mes}
-              onChange={(e) => setMes(parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-md"
-            >
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>Mes {i + 1}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-            <input
-              type="number"
-              value={anio}
-              onChange={(e) => setAnio(parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-md w-24"
-            />
-          </div>
-        </div>
-
-        {reporteGeneral && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{reporteGeneral.totalSoles?.toFixed(2) || '0.00'}</p>
-              <p className="text-sm text-gray-600">Total Soles</p>
-              {reporteGeneral.porcentajeCambioSoles != null && (
-                <p className={`text-sm font-medium ${reporteGeneral.porcentajeCambioSoles >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {reporteGeneral.porcentajeCambioSoles >= 0 ? '↑' : '↓'} {Math.abs(reporteGeneral.porcentajeCambioSoles).toFixed(2)}%
-                </p>
-              )}
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{reporteGeneral.totalDolares?.toFixed(2) || '0.00'}</p>
-              <p className="text-sm text-gray-600">Total Dólares</p>
-              {reporteGeneral.porcentajeCambioDolares != null && (
-                <p className={`text-sm font-medium ${reporteGeneral.porcentajeCambioDolares >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {reporteGeneral.porcentajeCambioDolares >= 0 ? '↑' : '↓'} {Math.abs(reporteGeneral.porcentajeCambioDolares).toFixed(2)}%
-                </p>
-              )}
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <p className="text-2xl font-bold text-yellow-600">{reporteGeneral.totalEuros?.toFixed(2) || '0.00'}</p>
-              <p className="text-sm text-gray-600">Total Euros</p>
-              {reporteGeneral.porcentajeCambioEuros != null && (
-                <p className={`text-sm font-medium ${reporteGeneral.porcentajeCambioEuros >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {reporteGeneral.porcentajeCambioEuros >= 0 ? '↑' : '↓'} {Math.abs(reporteGeneral.porcentajeCambioEuros).toFixed(2)}%
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {hasReporteData ? (
-          <div className="flex justify-center">
-            <BarChart width={600} height={300} data={cambioData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis label={{ value: 'Cambio %', angle: -90, position: 'insideLeft' }} />
-              <Tooltip formatter={(value) => [`${Number(value).toFixed(2)}%`, 'Cambio']} />
-              <Bar dataKey="cambio">
-                {cambioData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.cambio >= 0 ? '#28a745' : '#dc3545'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <p>No hay cambios porcentuales para mostrar en el gráfico</p>
-            <p className="text-sm mt-2">(Puede que no haya datos del mes anterior para comparar)</p>
-          </div>
-        )}
-      </Card>
-
-      {/* Reporte por Inversor */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Reporte por Inversor</h3>
-        
-        {/* Búsqueda de Inversor */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Inversor</label>
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Input
-                value={searchInversor}
-                onChange={(e) => {
-                  setSearchInversor(e.target.value);
-                  setShowReporteDropdown(true);
-                  if (!e.target.value) {
-                    setSelectedInversor('');
-                  }
-                }}
-                onFocus={() => setShowReporteDropdown(true)}
-                placeholder="Buscar inversor por nombre..."
-                icon={<Search className="w-4 h-4" />}
-              />
-              {showReporteDropdown && searchInversor && filteredInversoresReporte.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                  {filteredInversoresReporte.slice(0, 10).map((inversor) => (
-                    <button
-                      key={inversor.id}
-                      type="button"
-                      onClick={() => handleSelectInversorReporte(inversor)}
-                      className="w-full px-4 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
-                    >
-                      <div className="font-medium text-gray-900">{inversor.nombre}</div>
-                      <div className="text-sm text-gray-500">{inversor.nombreRegion || inversor.region?.nombres}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {showReporteDropdown && searchInversor && filteredInversoresReporte.length === 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-3 text-center text-gray-500">
-                  No se encontraron inversores
-                </div>
-              )}
-            </div>
-            <Button 
-              onClick={handleBuscarReporte}
-              disabled={loadingReporteInversor || !selectedInversor}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {loadingReporteInversor ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4 mr-2" />}
-              Buscar
-            </Button>
-          </div>
-        </div>
-
-        {loadingReporteInversor && (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner size="lg" />
-          </div>
-        )}
-
-        {!loadingReporteInversor && reporteInversor.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p>Seleccione un inversor para ver su reporte</p>
-          </div>
-        )}
-
-        {!loadingReporteInversor && reporteInversor.length > 0 && (
-        <div className="space-y-4">
-          {reporteInversor.map((inv) => (
-            <div key={inv.inversorId} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h4 className="font-semibold">{inv.nombreInversor}</h4>
-                  <p className="text-sm text-gray-600">{inv.nombreRegion}</p>
-                </div>
-                <Badge className={getEstadoColor(inv.estado)}>
-                  {getEstadoIcon(inv.estado)} {inv.estado}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-blue-600">{inv.totalSoles.toFixed(2)}</p>
-                  <p className="text-sm text-gray-600">Soles</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-green-600">{inv.totalDolares.toFixed(2)}</p>
-                  <p className="text-sm text-gray-600">Dólares</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-yellow-600">{inv.totalEuros.toFixed(2)}</p>
-                  <p className="text-sm text-gray-600">Euros</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <PieChart width={200} height={200}>
-                  <Pie
-                    data={[
-                      { name: 'Micro', value: inv.pagosMicroinversionista.reduce((sum, p) => sum + p.monto, 0) },
-                      { name: 'Inversionista', value: inv.pagosInversionista.reduce((sum, p) => sum + p.monto, 0) }
-                    ]}
-                    cx={100}
-                    cy={100}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    <Cell fill="#FF6384" />
-                    <Cell fill="#36A2EB" />
-                  </Pie>
-                  <Tooltip formatter={(value) => [`$${value}`, 'Monto']} />
-                </PieChart>
-                <BarChart width={300} height={200} data={[{
-                  name: inv.nombreInversor,
-                  Soles: inv.totalSoles,
-                  Dolares: inv.totalDolares,
-                  Euros: inv.totalEuros
-                }]}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="Soles" fill="#8884d8" />
-                  <Bar dataKey="Dolares" fill="#82ca9d" />
-                  <Bar dataKey="Euros" fill="#ffc658" />
-                </BarChart>
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-      </Card>
-    </div>
-  );
+  return <ReportesInversoresModule inversores={inversores} />;
 };

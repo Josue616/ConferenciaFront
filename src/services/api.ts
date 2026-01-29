@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport, Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, ReporteInversorDto, ReporteGeneralDto } from '../types';
+import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport, Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, ReporteInversorDto, ReporteGeneralDto, Gasto, GastoRequest, ReporteGastosIngresosDto, TotalesGastosDto } from '../types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
@@ -965,6 +965,29 @@ export const investorsApi = {
     }
   },
 
+  updateInversor: async (id: string, inversor: InversorRequest): Promise<Inversor> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/inversores/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(inversor)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar inversor');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating inversor:', error);
+      throw error;
+    }
+  },
+
   getInversorById: async (id: string): Promise<Inversor> => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -1176,6 +1199,175 @@ export const investorsApi = {
       return await response.json();
     } catch (error) {
       console.error('Error getting reporte general:', error);
+      throw error;
+    }
+  },
+
+  getReporteGastosIngresos: async (mes: number, anio: number): Promise<ReporteGastosIngresosDto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const body = { mes, anio };
+      const response = await fetch(`${API_BASE_URL}/reportesinversores/gastos-ingresos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte de gastos vs ingresos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting reporte gastos-ingresos:', error);
+      throw error;
+    }
+  },
+
+  getReporteGastosIngresosGlobal: async (): Promise<ReporteGastosIngresosDto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/reportesinversores/gastos-ingresos/global`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener reporte global de gastos vs ingresos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting reporte global gastos-ingresos:', error);
+      throw error;
+    }
+  }
+};
+
+// Gastos API
+export const gastosApi = {
+  create: async (gasto: GastoRequest): Promise<Gasto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/gastos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(gasto)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear gasto');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating gasto:', error);
+      throw error;
+    }
+  },
+
+  getAll: async (mes?: number, anio?: number, categoria?: string): Promise<Gasto[]> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      let url = `${API_BASE_URL}/gastos`;
+      const params = new URLSearchParams();
+      
+      if (mes !== undefined) params.append('mes', mes.toString());
+      if (anio !== undefined) params.append('anio', anio.toString());
+      if (categoria) params.append('categoria', categoria);
+      
+      const queryString = params.toString();
+      if (queryString) url += `?${queryString}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener gastos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting gastos:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id: string): Promise<Gasto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/gastos/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener gasto');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting gasto:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/gastos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar gasto');
+      }
+    } catch (error) {
+      console.error('Error deleting gasto:', error);
+      throw error;
+    }
+  },
+
+  getTotales: async (filtros?: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    categoria?: string;
+    divisa?: string;
+  }): Promise<TotalesGastosDto> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/gastos/totales`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(filtros || {})
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener totales de gastos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting totales gastos:', error);
       throw error;
     }
   }

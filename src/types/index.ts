@@ -314,6 +314,8 @@ export interface Inversor {
   nombre: string;
   idRegion: string;
   nombreRegion?: string;
+  montoMensualCuota: number;
+  currencyCuota: number | string; // 0: Dolares, 1: Soles, 2: Euros o "Dolares", "Soles", "Euros"
   region?: {
     id: string;
     nombres: string;
@@ -323,6 +325,8 @@ export interface Inversor {
 export interface InversorRequest {
   nombre: string;
   idRegion: string;
+  montoMensualCuota: number;
+  currencyCuota: number | string; // 0: Dolares, 1: Soles, 2: Euros o "Dolares", "Soles", "Euros"
 }
 
 export interface PagoInversor {
@@ -379,6 +383,12 @@ export interface ReporteInversorDto {
   totalSoles: number;
   totalDolares: number;
   totalEuros: number;
+  montoEsperadoSoles: number;
+  montoEsperadoDolares: number;
+  diferenciaSoles: number;
+  diferenciaDolares: number;
+  porcentajeCumplimientoSoles: number;
+  porcentajeCumplimientoDolares: number;
   estado: string;
 }
 
@@ -395,4 +405,91 @@ export interface ReporteGeneralDto {
   porcentajeCambioSoles: number | null;
   porcentajeCambioDolares: number | null;
   porcentajeCambioEuros: number | null;
+}
+
+// Gastos
+export interface Gasto {
+  id: string;
+  monto: number;
+  currency: number | string; // 0: Dólares, 1: Soles, 2: Euros o "Dolares", "Soles", "Euros"
+  categoria: string; // "Marketing", "Infraestructura", "Personal", etc.
+  descripcion: string;
+  fecha: string;
+}
+
+export interface GastoRequest {
+  monto: number;
+  currency: number | string;
+  categoria: string;
+  descripcion: string;
+}
+
+export interface TotalesGastosDto {
+  totalSoles: number;
+  totalDolares: number;
+  totalEuros: number;
+  totalConvertidoSoles: number;
+  gastosPorCategoria: {
+    categoria: string;
+    montoTotal: number;
+    numeroTransacciones: number;
+    porcentajeDelTotal: number;
+  }[];
+  gastosPorMes: {
+    mes: number;
+    anio: number;
+    nombreMes: string;
+    montoTotal: number;
+    numeroTransacciones: number;
+  }[];
+  gastosPorDivisa: {
+    divisa: string;
+    montoTotal: number;
+    montoConvertidoSoles: number;
+    numeroTransacciones: number;
+    porcentajeDelTotal: number;
+  }[];
+  totalTransacciones: number;
+  fechaPrimerGasto: string;
+  fechaUltimoGasto: string;
+}
+
+export interface ReporteGastosIngresosDto {
+  mes?: number;
+  anio?: number;
+  totalIngresosSoles: number;
+  totalIngresosDolares: number;
+  totalIngresosConvertidoSoles: number;
+  totalGastosSoles: number;
+  totalGastosDolares: number;
+  totalGastosConvertidoSoles: number;
+  balanceSoles: number;
+  balanceDolares: number;
+  balanceTotalSoles: number;
+  gastosPorCategoria: {
+    categoria: string;
+    montoSoles: number;
+    montoDolares: number;
+    montoTotalSoles: number;
+    numeroTransacciones: number;
+  }[];
+  detalleIngresos: {
+    tipoInversor: string;
+    montoSoles: number;
+    montoDolares: number;
+    numeroPagos: number;
+  }[];
+  estadoFinanciero: string;
+  alertaConsumoSoles: string;
+  // Campos adicionales para reporte global
+  fechaPrimerIngreso?: string;
+  fechaUltimoIngreso?: string;
+  fechaPrimerGasto?: string;
+  fechaUltimoGasto?: string;
+  totalMesesConIngresos?: number;
+  totalMesesConGastos?: number;
+  totalTransaccionesIngresos?: number;
+  totalTransaccionesGastos?: number;
+  promedioIngresosMensualSoles?: number;
+  promedioGastosMensualSoles?: number;
 }
