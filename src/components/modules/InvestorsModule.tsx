@@ -14,11 +14,27 @@ import { useAuth } from '../../contexts/AuthContext';
 import { GastosModule } from './GastosModule';
 
 export const InvestorsModule: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'gastos' | 'tipos' | 'reportes'>('inversores');
   const { user } = useAuth();
   // Usuarios con permiso restringido (solo ver inversores, pagos y gastos)
   // DNI '00516107' => restricted (no tipos/reportes). DNI '003871056' => restricted + only microinversionista pagos.
   const isRestrictedUser = user?.dni === '00516107' || user?.dni === '003871056';
+
+  // Restaurar la pestaña activa desde localStorage si existe y es válida, respetando los permisos del usuario
+  const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'gastos' | 'tipos' | 'reportes'>(() => {
+    try {
+      const saved = localStorage.getItem('investors_active_tab') as any;
+      const allowedTabs = ['inversores', 'pagos', 'gastos', 'tipos', 'reportes'];
+      if (saved && allowedTabs.includes(saved)) {
+        if (isRestrictedUser && !['inversores', 'pagos', 'gastos'].includes(saved)) {
+          return 'inversores';
+        }
+        return saved;
+      }
+    } catch (e) {
+      // ignore and fallback
+    }
+    return 'inversores';
+  });
 
   // Si el usuario está restringido y la pestaña activa no está permitida, forzar a 'inversores'
   useEffect(() => {
@@ -26,6 +42,15 @@ export const InvestorsModule: React.FC = () => {
       setActiveTab('inversores');
     }
   }, [isRestrictedUser, activeTab]);
+
+  // Guardar la pestaña activa en localStorage para restaurarla en recargas
+  useEffect(() => {
+    try {
+      localStorage.setItem('investors_active_tab', activeTab);
+    } catch (e) {
+      // ignore
+    }
+  }, [activeTab]);
 
   return (
     <div className="space-y-6">

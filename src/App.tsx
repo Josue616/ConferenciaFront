@@ -18,12 +18,15 @@ const AppContent: React.FC = () => {
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Cuando el usuario se autentica, forzar la vista al dashboard
+  // Solo forzar la vista al dashboard cuando la autenticación *cambie* de false a true (inicio de sesión),
+  // para que una recarga no nos devuelva al dashboard si ya estábamos en otra vista.
+  const prevAuthRef = React.useRef(isAuthenticated);
   React.useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !prevAuthRef.current) {
       setCurrentView('dashboard');
       localStorage.setItem('currentView', 'dashboard');
     }
+    prevAuthRef.current = isAuthenticated;
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
