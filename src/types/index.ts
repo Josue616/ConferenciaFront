@@ -412,7 +412,7 @@ export interface Gasto {
   id: string;
   monto: number;
   currency: number | string; // 0: Dólares, 1: Soles, 2: Euros o "Dolares", "Soles", "Euros"
-  categoria: string; // "Marketing", "Infraestructura", "Personal", etc.
+  categoria: number | string; // Enum id (0..8) o etiqueta (string)
   descripcion: string;
   fecha: string;
 }
@@ -420,7 +420,7 @@ export interface Gasto {
 export interface GastoRequest {
   monto: number;
   currency: number | string;
-  categoria: string;
+  categoria: number | string;
   descripcion: string;
 }
 

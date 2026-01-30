@@ -13,14 +13,15 @@ import { gastosApi } from '../../services/api';
 import { formatDate } from '../../utils/dateUtils';
 
 const CATEGORIAS = [
-  'Marketing',
-  'Infraestructura',
-  'Personal',
-  'Servicios',
-  'Equipamiento',
-  'Consultoria',
-  'Legal',
-  'Otros'
+  { id: 0, label: 'Transporte' },
+  { id: 1, label: 'Ofrenda' },
+  { id: 2, label: 'Alquiler' },
+  { id: 3, label: 'ComprasCasona' },
+  { id: 4, label: 'InversionistasGlobal' },
+  { id: 5, label: 'ObraInternacional' },
+  { id: 6, label: 'Logistica' },
+  { id: 7, label: 'Viajes' },
+  { id: 8, label: 'Otros' }
 ];
 
 export const GastosModule: React.FC = () => {
@@ -39,7 +40,7 @@ export const GastosModule: React.FC = () => {
   // Filtros
   const [filterMes, setFilterMes] = useState<number | ''>('');
   const [filterAnio, setFilterAnio] = useState<number | ''>('');
-  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState<number | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   
   // Paginación
@@ -63,7 +64,7 @@ export const GastosModule: React.FC = () => {
       setError('');
       const mes = filterMes !== '' ? Number(filterMes) : undefined;
       const anio = filterAnio !== '' ? Number(filterAnio) : undefined;
-      const categoria = filterCategoria || undefined;
+      const categoria = filterCategoria === '' ? undefined : String(filterCategoria);
       
       const data = await gastosApi.getAll(mes, anio, categoria);
       setGastos(data);
@@ -79,8 +80,8 @@ export const GastosModule: React.FC = () => {
     try {
       const filtros: any = {};
       
-      if (filterCategoria) {
-        filtros.categoria = filterCategoria;
+      if (filterCategoria !== '' && filterCategoria !== null && filterCategoria !== undefined) {
+        filtros.categoria = String(filterCategoria);
       }
       
       const data = await gastosApi.getTotales(filtros);
@@ -178,18 +179,40 @@ export const GastosModule: React.FC = () => {
     }
   };
 
-  const getCategoryColor = (categoria: string): 'secondary' | 'primary' | 'success' | 'warning' | 'danger' => {
+  const CATEGORY_MAP: Record<number, string> = {
+    0: 'Transporte',
+    1: 'Ofrenda',
+    2: 'Alquiler',
+    3: 'ComprasCasona',
+    4: 'InversionistasGlobal',
+    5: 'ObraInternacional',
+    6: 'Logistica',
+    7: 'Viajes',
+    8: 'Otros'
+  };
+
+  const getCategoryLabel = (categoria: number | string | undefined): string => {
+    if (categoria === '' || categoria === undefined || categoria === null) return '';
+    if (typeof categoria === 'number') return CATEGORY_MAP[categoria] ?? String(categoria);
+    const asNumber = Number(categoria);
+    if (!Number.isNaN(asNumber)) return CATEGORY_MAP[asNumber] ?? categoria;
+    return String(categoria);
+  };
+
+  const getCategoryColor = (categoria: number | string | undefined): 'secondary' | 'primary' | 'success' | 'warning' | 'danger' => {
+    const label = getCategoryLabel(categoria);
     const colorMap: Record<string, 'secondary' | 'primary' | 'success' | 'warning' | 'danger'> = {
-      'Marketing': 'primary',
-      'Infraestructura': 'primary',
-      'Personal': 'success',
-      'Servicios': 'warning',
-      'Equipamiento': 'secondary',
-      'Consultoria': 'primary',
-      'Legal': 'danger',
+      'Transporte': 'primary',
+      'Ofrenda': 'success',
+      'Alquiler': 'warning',
+      'ComprasCasona': 'primary',
+      'InversionistasGlobal': 'secondary',
+      'ObraInternacional': 'danger',
+      'Logistica': 'success',
+      'Viajes': 'warning',
       'Otros': 'secondary'
     };
-    return colorMap[categoria] || 'secondary';
+    return colorMap[label] || 'secondary';
   };
 
   // Paginación
@@ -326,12 +349,12 @@ export const GastosModule: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
               <select
                 value={filterCategoria}
-                onChange={(e) => setFilterCategoria(e.target.value)}
+                onChange={(e) => setFilterCategoria(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Todas</option>
                 {CATEGORIAS.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
             </div>
@@ -383,7 +406,7 @@ export const GastosModule: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Badge variant={getCategoryColor(gasto.categoria)}>
-                        {gasto.categoria}
+                        {getCategoryLabel(gasto.categoria)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
@@ -471,13 +494,13 @@ export const GastosModule: React.FC = () => {
             </label>
             <select
               value={formData.categoria}
-              onChange={(e) => setFormData(prev => ({ ...prev, categoria: e.target.value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, categoria: e.target.value === '' ? '' : Number(e.target.value) }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Seleccionar categoría</option>
               {CATEGORIAS.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
               ))}
             </select>
           </div>

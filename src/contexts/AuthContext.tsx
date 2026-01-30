@@ -34,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     localStorage.setItem('auth_user', JSON.stringify(userData));
     localStorage.setItem('auth_token', userData.token);
+    // Al iniciar sesión, aseguramos que la vista active sea el dashboard
+    localStorage.setItem('currentView', 'dashboard');
   };
 
   const logout = () => {

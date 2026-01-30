@@ -18,6 +18,14 @@ const AppContent: React.FC = () => {
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Cuando el usuario se autentica, forzar la vista al dashboard
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      setCurrentView('dashboard');
+      localStorage.setItem('currentView', 'dashboard');
+    }
+  }, [isAuthenticated]);
+
   if (!isAuthenticated) {
     return <LoginForm />;
   }

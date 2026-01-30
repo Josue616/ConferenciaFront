@@ -10,10 +10,21 @@ import { Pagination } from '../ui/Pagination';
 import { Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, Region } from '../../types';
 import { investorsApi, regionsApi } from '../../services/api';
 import { ReportesInversoresModule } from './InvestorReportsModule';
+import { useAuth } from '../../contexts/AuthContext';
 import { GastosModule } from './GastosModule';
 
 export const InvestorsModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'gastos' | 'tipos' | 'reportes'>('inversores');
+  const { user } = useAuth();
+  // Usuario con permiso restringido (solo ver inversores, pagos y gastos)
+  const isRestrictedUser = user?.dni === '00516107';
+
+  // Si el usuario está restringido y la pestaña activa no está permitida, forzar a 'inversores'
+  useEffect(() => {
+    if (isRestrictedUser && !['inversores', 'pagos', 'gastos'].includes(activeTab)) {
+      setActiveTab('inversores');
+    }
+  }, [isRestrictedUser, activeTab]);
 
   return (
     <div className="space-y-6">
@@ -57,28 +68,32 @@ export const InvestorsModule: React.FC = () => {
             <FileText className="w-4 h-4 inline mr-2" />
             Gastos
           </button>
-          <button
-            onClick={() => setActiveTab('tipos')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'tipos'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Tag className="w-4 h-4 inline mr-2" />
-            Tipos
-          </button>
-          <button
-            onClick={() => setActiveTab('reportes')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'reportes'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 inline mr-2" />
-            Reportes
-          </button>
+          {!isRestrictedUser && (
+            <button
+              onClick={() => setActiveTab('tipos')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'tipos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Tag className="w-4 h-4 inline mr-2" />
+              Tipos
+            </button>
+          )}
+          {!isRestrictedUser && (
+            <button
+              onClick={() => setActiveTab('reportes')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'reportes'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 inline mr-2" />
+              Reportes
+            </button>
+          )}
         </nav>
       </div>
 
@@ -86,8 +101,8 @@ export const InvestorsModule: React.FC = () => {
       {activeTab === 'inversores' && <InversoresTab />}
       {activeTab === 'pagos' && <PagosTab />}
       {activeTab === 'gastos' && <GastosTab />}
-      {activeTab === 'tipos' && <TiposTab />}
-      {activeTab === 'reportes' && <ReportesTab />}
+      {!isRestrictedUser && activeTab === 'tipos' && <TiposTab />}
+      {!isRestrictedUser && activeTab === 'reportes' && <ReportesTab /> }
     </div>
   );
 };
@@ -458,6 +473,9 @@ const InversoresTab: React.FC = () => {
 
 // Pagos Tab Component
 const PagosTab: React.FC = () => {
+  const { user } = useAuth();
+  const isRestrictedUser = user?.dni === '00516107';
+
   const [pagos, setPagos] = useState<PagoInversor[]>([]);
   const [tipos, setTipos] = useState<Tipo[]>([]);
   const [inversores, setInversores] = useState<Inversor[]>([]);
@@ -471,6 +489,17 @@ const PagosTab: React.FC = () => {
     currency: 0,
     idTipo: ''
   });
+
+  // Filtrar tipos disponibles según permisos del usuario
+  const availableTipos = isRestrictedUser ? tipos.filter(t => !t.esMicroinversionista) : tipos;
+
+  // Si usuario restringido abre modal y no hay tipo seleccionado, preseleccionar un tipo válido
+  useEffect(() => {
+    if (isModalOpen && isRestrictedUser && tipos.length > 0) {
+      const defaultTipo = tipos.find(t => !t.esMicroinversionista);
+      if (defaultTipo) setFormData(prev => ({ ...prev, idTipo: defaultTipo.id }));
+    }
+  }, [isModalOpen, tipos, isRestrictedUser]);
   
   // Filtros
   const [searchInversor, setSearchInversor] = useState('');
@@ -519,7 +548,18 @@ const PagosTab: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setError('');
     try {
+      // Validacion extra para usuario restringido: no permitir crear pagos como Microinversionista
+      if (isRestrictedUser) {
+        const selectedTipo = tipos.find(t => t.id === formData.idTipo);
+        if (selectedTipo?.esMicroinversionista) {
+          setError('No autorizado para seleccionar tipo Microinversionista');
+          setSubmitting(false);
+          return;
+        }
+      }
+
       await investorsApi.createPagoInversor(formData);
       await loadData();
       setIsModalOpen(false);
@@ -903,7 +943,7 @@ const PagosTab: React.FC = () => {
               required
             >
               <option value="">Seleccionar tipo</option>
-              {tipos.map(tipo => (
+              {availableTipos.map(tipo => (
                 <option key={tipo.id} value={tipo.id}>{getTipoNombre(tipo.esMicroinversionista)}</option>
               ))}
             </select>

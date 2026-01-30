@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
+import { Users as UsersIcon, User as UserIcon, UserX as UserXIcon, Search, Phone, Calendar, MapPin, Plus, Edit, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
@@ -377,7 +377,7 @@ export const UsersModule: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-600">
                         <MapPin className="w-4 h-4 mr-2" />
-                        {user.region.nombres}
+                        {user.region?.nombres || 'Desconocida'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -437,7 +437,7 @@ export const UsersModule: React.FC = () => {
         {/* Usuarios Femeninos */}
         <Card padding="sm">
           <div className="mb-4 flex items-center space-x-2">
-            <UserX className="w-5 h-5 text-pink-600" />
+            <UserXIcon className="w-5 h-5 text-pink-600" />
             <h3 className="text-lg font-semibold text-gray-900">Usuarios Femeninos</h3>
             <Badge variant="secondary">
               {filteredUsers.filter(u => !u.sexo).length}
@@ -482,7 +482,7 @@ export const UsersModule: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                          <UserX className="w-5 h-5 text-pink-600" />
+                          <UserXIcon className="w-5 h-5 text-pink-600" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
@@ -506,7 +506,7 @@ export const UsersModule: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-600">
                         <MapPin className="w-4 h-4 mr-2" />
-                        {user.region.nombres}
+                        {user.region?.nombres || 'Desconocida'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -638,7 +638,7 @@ export const UsersModule: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-600">
                       <MapPin className="w-4 h-4 mr-2" />
-                      {user.region.nombres}
+                      {user.region?.nombres || 'Desconocida'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -689,7 +689,7 @@ export const UsersModule: React.FC = () => {
 
       {filteredUsers.length === 0 && !loading && (
         <Card className="text-center py-12">
-          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No se encontraron usuarios
           </h3>
