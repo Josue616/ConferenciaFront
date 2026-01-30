@@ -16,8 +16,9 @@ import { GastosModule } from './GastosModule';
 export const InvestorsModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'inversores' | 'pagos' | 'gastos' | 'tipos' | 'reportes'>('inversores');
   const { user } = useAuth();
-  // Usuario con permiso restringido (solo ver inversores, pagos y gastos)
-  const isRestrictedUser = user?.dni === '00516107';
+  // Usuarios con permiso restringido (solo ver inversores, pagos y gastos)
+  // DNI '00516107' => restricted (no tipos/reportes). DNI '003871056' => restricted + only microinversionista pagos.
+  const isRestrictedUser = user?.dni === '00516107' || user?.dni === '003871056';
 
   // Si el usuario está restringido y la pestaña activa no está permitida, forzar a 'inversores'
   useEffect(() => {
@@ -474,7 +475,9 @@ const InversoresTab: React.FC = () => {
 // Pagos Tab Component
 const PagosTab: React.FC = () => {
   const { user } = useAuth();
-  const isRestrictedUser = user?.dni === '00516107';
+  // Usuarios restringidos comparten vista limitada. '003871056' además sólo puede crear pagos para microinversionistas.
+  const isRestrictedUser = user?.dni === '00516107' || user?.dni === '003871056';
+  const isMicroOnlyUser = user?.dni === '003871056';
 
   const [pagos, setPagos] = useState<PagoInversor[]>([]);
   const [tipos, setTipos] = useState<Tipo[]>([]);
@@ -491,15 +494,26 @@ const PagosTab: React.FC = () => {
   });
 
   // Filtrar tipos disponibles según permisos del usuario
-  const availableTipos = isRestrictedUser ? tipos.filter(t => !t.esMicroinversionista) : tipos;
+  // - Para '003871056' (micro-only): permitir SOLO microinversionista
+  // - Para '00516107' (restricted): no permitir microinversionista
+  const availableTipos = isMicroOnlyUser
+    ? tipos.filter(t => t.esMicroinversionista)
+    : isRestrictedUser
+      ? tipos.filter(t => !t.esMicroinversionista)
+      : tipos; 
 
   // Si usuario restringido abre modal y no hay tipo seleccionado, preseleccionar un tipo válido
   useEffect(() => {
-    if (isModalOpen && isRestrictedUser && tipos.length > 0) {
-      const defaultTipo = tipos.find(t => !t.esMicroinversionista);
-      if (defaultTipo) setFormData(prev => ({ ...prev, idTipo: defaultTipo.id }));
+    if (isModalOpen && tipos.length > 0) {
+      if (isMicroOnlyUser) {
+        const defaultTipo = tipos.find(t => t.esMicroinversionista);
+        if (defaultTipo) setFormData(prev => ({ ...prev, idTipo: defaultTipo.id }));
+      } else if (isRestrictedUser) {
+        const defaultTipo = tipos.find(t => !t.esMicroinversionista);
+        if (defaultTipo) setFormData(prev => ({ ...prev, idTipo: defaultTipo.id }));
+      }
     }
-  }, [isModalOpen, tipos, isRestrictedUser]);
+  }, [isModalOpen, tipos, isRestrictedUser, isMicroOnlyUser]);
   
   // Filtros
   const [searchInversor, setSearchInversor] = useState('');
@@ -550,9 +564,17 @@ const PagosTab: React.FC = () => {
     setSubmitting(true);
     setError('');
     try {
-      // Validacion extra para usuario restringido: no permitir crear pagos como Microinversionista
-      if (isRestrictedUser) {
-        const selectedTipo = tipos.find(t => t.id === formData.idTipo);
+      // Validacion extra según permisos:
+      const selectedTipo = tipos.find(t => t.id === formData.idTipo);
+      if (isMicroOnlyUser) {
+        // Solo tipos microinversionista permitidos
+        if (!selectedTipo?.esMicroinversionista) {
+          setError('No autorizado: solo tipos Microinversionista permitidos para su cuenta');
+          setSubmitting(false);
+          return;
+        }
+      } else if (isRestrictedUser) {
+        // Usuario restringido (00516107): no permitir microinversionista
         if (selectedTipo?.esMicroinversionista) {
           setError('No autorizado para seleccionar tipo Microinversionista');
           setSubmitting(false);

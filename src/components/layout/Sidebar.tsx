@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const visibleItems = menuItems.filter(item => 
     (!item.adminOnly || isAdmin) && 
-    (!item.specialAccess || (isAdmin && user?.nombres === 'Alexander Herrada Toledo') ||(isAdmin && user?.nombres === 'PÉREZ ESCOBAR MAGDA RUTH'))
+    (!item.specialAccess || (isAdmin && user?.nombres === 'Alexander Herrada Toledo') || (isAdmin && user?.nombres === 'Sonia Leon') || (isAdmin && user?.nombres === 'PÉREZ ESCOBAR MAGDA RUTH'))
   );
 
   return (
