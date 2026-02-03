@@ -625,8 +625,32 @@ const PagosTab: React.FC = () => {
     setShowInversorDropdown(false);
   };
 
+  // Normalizar currency a número para comparaciones
+  const normalizeCurrency = (currency: number | string): number => {
+    if (typeof currency === 'number') return currency;
+    // Si es string, mapear a número
+    const currencyMap: Record<string, number> = {
+      'Dolares': 0,
+      'Dólares': 0,
+      'Soles': 1,
+      'Euros': 2
+    };
+    return currencyMap[currency] ?? -1;
+  };
+
+  // Normalizar tipo a boolean para comparaciones
+  const normalizeTipo = (pago: PagoInversor): boolean | undefined => {
+    if (pago.tipo?.esMicroinversionista !== undefined) {
+      return pago.tipo.esMicroinversionista;
+    }
+    if (pago.esMicroinversionista !== undefined) {
+      return pago.esMicroinversionista;
+    }
+    return undefined;
+  };
+
   const getCurrencyIcon = (currency: number | string) => {
-    const num = typeof currency === 'string' ? parseInt(currency) : currency;
+    const num = normalizeCurrency(currency);
     switch (num) {
       case 0: return <DollarSign className="w-4 h-4 text-green-600" />;
       case 1: return <Coins className="w-4 h-4 text-blue-600" />;
@@ -695,8 +719,20 @@ const PagosTab: React.FC = () => {
   const filteredPagos = pagos.filter(pago => {
     const inversorNombre = getInversorNombre(pago.idInversor).toLowerCase();
     const matchesInversor = !searchInversor || inversorNombre.includes(searchInversor.toLowerCase());
-    const matchesCurrency = filterCurrency === '' || pago.currency === filterCurrency;
-    const matchesTipo = !filterTipo || pago.tipo?.id === filterTipo;
+    
+    // Normalizar currency para comparación correcta
+    const pagoCurrency = normalizeCurrency(pago.currency);
+    const matchesCurrency = filterCurrency === '' || pagoCurrency === filterCurrency;
+    
+    // Normalizar tipo para comparación correcta
+    let matchesTipo = true;
+    if (filterTipo) {
+      const selectedTipo = tipos.find(t => t.id === filterTipo);
+      if (selectedTipo) {
+        const pagoTipo = normalizeTipo(pago);
+        matchesTipo = pagoTipo !== undefined && pagoTipo === selectedTipo.esMicroinversionista;
+      }
+    }
     
     let matchesFechas = true;
     if (filterFechaInicio || filterFechaFin) {
@@ -868,7 +904,11 @@ const PagosTab: React.FC = () => {
                     {getCurrencyName(pago.currency)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {pago.tipo ? getTipoNombre(pago.tipo.esMicroinversionista) : 'Sin tipo'}
+                    {pago.tipo?.esMicroinversionista !== undefined 
+                      ? getTipoNombre(pago.tipo.esMicroinversionista)
+                      : pago.esMicroinversionista !== undefined
+                        ? getTipoNombre(pago.esMicroinversionista)
+                        : 'Sin tipo'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(pago.fechaCreacion).toLocaleDateString()}

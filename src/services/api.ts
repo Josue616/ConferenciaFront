@@ -1,7 +1,7 @@
 import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Payment, ConferenceRequest, UserRequest, UserUpdateRequest, ParticipationRequest, NextConferenceMissingPaymentParticipant, UsersTotalReport, ParticipationWithPayment, ConferenceParticipantsReport, ParticipantsReport, ParticipantsByRegionReport, RegionParticipantsReport, ConferenceRegionParticipantsReport, ConferenceFinancialReport, Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, ReporteInversorDto, ReporteGeneralDto, Gasto, GastoRequest, ReporteGastosIngresosDto, TotalesGastosDto } from '../types';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5078/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://conferencias.sytes.net/api';
 
 
 // Auth API

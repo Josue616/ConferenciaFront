@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, DollarSign, Coins, Euro, Users, Search, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BarChart3, TrendingUp, TrendingDown, DollarSign, Coins, Euro, Users, Search, FileText, AlertTriangle, CheckCircle, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { ReporteInversorDto, ReporteGeneralDto, ReporteGastosIngresosDto, Inversor } from '../../types';
 import { investorsApi } from '../../services/api';
 import { BarChart, Bar, Cell, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import jsPDF from 'jspdf';
 
 interface ReportesInversoresModuleProps {
   inversores?: Inversor[];
@@ -84,6 +85,8 @@ const ReportePorInversor: React.FC<{ inversoresProp?: Inversor[] }> = ({ inverso
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const reporteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (inversoresProp) {
@@ -145,8 +148,159 @@ const ReportePorInversor: React.FC<{ inversoresProp?: Inversor[] }> = ({ inverso
     return configs[estado] || { color: 'text-gray-700', icon: '❓', bgColor: 'bg-gray-100' };
   };
 
+  const handleExportPDF = async () => {
+    if (!reporteRef.current || reportes.length === 0) return;
+    
+    setExportingPdf(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      
+      // Título
+      pdf.setFontSize(20);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Reporte de Inversores', margin, margin + 10);
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(`Generado: ${new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, margin, margin + 17);
+
+      let yPosition = margin + 25;
+
+      for (let i = 0; i < reportes.length; i++) {
+        const reporte = reportes[i];
+
+        // Nueva página si es necesario (excepto para el primero)
+        if (i > 0) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Encabezado del inversor
+        pdf.setFontSize(16);
+        pdf.setTextColor(31, 41, 55);
+        pdf.text(reporte.nombreInversor, margin, yPosition);
+        yPosition += 7;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`Región: ${reporte.nombreRegion}`, margin, yPosition);
+        
+        // Estado
+        pdf.setFontSize(11);
+        if (reporte.estado === 'Excelente') pdf.setTextColor(21, 128, 61);
+        else if (reporte.estado === 'Bueno') pdf.setTextColor(161, 98, 7);
+        else if (reporte.estado === 'Aceptable') pdf.setTextColor(234, 88, 12);
+        else if (reporte.estado === 'Deficiente') pdf.setTextColor(185, 28, 28);
+        else pdf.setTextColor(75, 85, 99);
+        
+        pdf.text(`Estado: ${reporte.estado}`, pageWidth - margin - 40, yPosition);
+        yPosition += 10;
+
+        // Sección de totales
+        pdf.setFontSize(12);
+        pdf.setTextColor(31, 41, 55);
+        pdf.text('Totales por Moneda', margin, yPosition);
+        yPosition += 7;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(59, 130, 246);
+        pdf.text(`Soles: S/ ${reporte.totalSoles.toFixed(2)}`, margin + 5, yPosition);
+        if (reporte.montoEsperadoSoles > 0) {
+          pdf.setTextColor(107, 114, 128);
+          pdf.text(`(Esperado: S/ ${reporte.montoEsperadoSoles.toFixed(2)} - ${reporte.porcentajeCumplimientoSoles?.toFixed(1)}%)`, margin + 50, yPosition);
+        }
+        yPosition += 7;
+
+        pdf.setTextColor(16, 185, 129);
+        pdf.text(`Dólares: $ ${reporte.totalDolares.toFixed(2)}`, margin + 5, yPosition);
+        if (reporte.montoEsperadoDolares > 0) {
+          pdf.setTextColor(107, 114, 128);
+          pdf.text(`(Esperado: $ ${reporte.montoEsperadoDolares.toFixed(2)} - ${reporte.porcentajeCumplimientoDolares?.toFixed(1)}%)`, margin + 50, yPosition);
+        }
+        yPosition += 7;
+
+        pdf.setTextColor(245, 158, 11);
+        pdf.text(`Euros: € ${reporte.totalEuros.toFixed(2)}`, margin + 5, yPosition);
+        yPosition += 10;
+
+        // Desglose de pagos
+        pdf.setFontSize(12);
+        pdf.setTextColor(31, 41, 55);
+        pdf.text('Desglose de Pagos', margin, yPosition);
+        yPosition += 7;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(236, 72, 153);
+        pdf.text(`Microinversionista: ${reporte.numeroPagosMicroinversionista} pagos`, margin + 5, yPosition);
+        yPosition += 5;
+
+        if (reporte.pagosMicroinversionista.length > 0) {
+          pdf.setFontSize(9);
+          pdf.setTextColor(107, 114, 128);
+          reporte.pagosMicroinversionista.slice(0, 3).forEach((pago) => {
+            const fecha = new Date(pago.fechaCreacion).toLocaleDateString('es-ES');
+            const texto = `  • ${fecha} - ${pago.currency} ${pago.monto.toFixed(2)}`;
+            pdf.text(texto, margin + 10, yPosition);
+            yPosition += 4;
+          });
+          if (reporte.pagosMicroinversionista.length > 3) {
+            pdf.text(`  ... y ${reporte.pagosMicroinversionista.length - 3} más`, margin + 10, yPosition);
+            yPosition += 4;
+          }
+        }
+        yPosition += 3;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(59, 130, 246);
+        pdf.text(`Inversionista: ${reporte.numeroPagosInversionista} pagos`, margin + 5, yPosition);
+        yPosition += 5;
+
+        if (reporte.pagosInversionista.length > 0) {
+          pdf.setFontSize(9);
+          pdf.setTextColor(107, 114, 128);
+          reporte.pagosInversionista.slice(0, 3).forEach((pago) => {
+            const fecha = new Date(pago.fechaCreacion).toLocaleDateString('es-ES');
+            const texto = `  • ${fecha} - ${pago.currency} ${pago.monto.toFixed(2)}`;
+            pdf.text(texto, margin + 10, yPosition);
+            yPosition += 4;
+          });
+          if (reporte.pagosInversionista.length > 3) {
+            pdf.text(`  ... y ${reporte.pagosInversionista.length - 3} más`, margin + 10, yPosition);
+            yPosition += 4;
+          }
+        }
+
+        // Línea separadora
+        if (i < reportes.length - 1) {
+          pdf.setDrawColor(229, 231, 235);
+          pdf.line(margin, yPosition + 5, pageWidth - margin, yPosition + 5);
+        }
+      }
+
+      // Guardar PDF
+      const fileName = selectedInversor 
+        ? `reporte_inversor_${searchTerm.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`
+        : `reporte_todos_inversores_${new Date().getTime()}.pdf`;
+      
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      alert('Error al generar el PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={reporteRef}>
       {/* Búsqueda */}
       <Card className="p-4">
         <div className="flex gap-3">
@@ -181,6 +335,16 @@ const ReportePorInversor: React.FC<{ inversoresProp?: Inversor[] }> = ({ inverso
             {loading ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4 mr-2" />}
             Buscar
           </Button>
+          {reportes.length > 0 && (
+            <Button 
+              onClick={handleExportPDF} 
+              disabled={exportingPdf}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {exportingPdf ? <LoadingSpinner size="sm" /> : <Download className="w-4 h-4 mr-2" />}
+              Exportar PDF
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -412,6 +576,7 @@ const ReporteGeneral: React.FC = () => {
   const [tipo, setTipo] = useState('Ambos');
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   useEffect(() => {
     loadReporte();
@@ -458,6 +623,128 @@ const ReporteGeneral: React.FC = () => {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
+  const handleExportPDF = async () => {
+    if (!reporte) return;
+    
+    setExportingPdf(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const margin = 15;
+      let yPosition = margin;
+      
+      // Título
+      pdf.setFontSize(20);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Reporte General Mensual de Inversores', margin, yPosition + 10);
+      yPosition += 20;
+      
+      // Período
+      pdf.setFontSize(14);
+      pdf.setTextColor(59, 130, 246);
+      pdf.text(`${mesesNombres[mes - 1]} ${anio}`, margin, yPosition);
+      yPosition += 7;
+      
+      pdf.setFontSize(11);
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(`Tipo: ${reporte.tipoFiltro}`, margin, yPosition);
+      yPosition += 10;
+      
+      pdf.setFontSize(9);
+      pdf.text(`Generado: ${new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, margin, yPosition);
+      yPosition += 15;
+
+      // Totales actuales
+      pdf.setFontSize(14);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Totales del Mes', margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setTextColor(59, 130, 246);
+      pdf.text(`Soles: S/ ${reporte.totalSoles.toFixed(2)}`, margin + 5, yPosition);
+      if (reporte.porcentajeCambioSoles !== null && reporte.porcentajeCambioSoles !== undefined) {
+        pdf.setTextColor(reporte.porcentajeCambioSoles >= 0 ? 22 : 185, reporte.porcentajeCambioSoles >= 0 ? 163 : 28, reporte.porcentajeCambioSoles >= 0 ? 74 : 28);
+        pdf.text(`(${reporte.porcentajeCambioSoles >= 0 ? '+' : ''}${reporte.porcentajeCambioSoles.toFixed(2)}%)`, margin + 55, yPosition);
+      }
+      yPosition += 7;
+
+      pdf.setTextColor(16, 185, 129);
+      pdf.text(`Dólares: $ ${reporte.totalDolares.toFixed(2)}`, margin + 5, yPosition);
+      if (reporte.porcentajeCambioDolares !== null && reporte.porcentajeCambioDolares !== undefined) {
+        pdf.setTextColor(reporte.porcentajeCambioDolares >= 0 ? 22 : 185, reporte.porcentajeCambioDolares >= 0 ? 163 : 28, reporte.porcentajeCambioDolares >= 0 ? 74 : 28);
+        pdf.text(`(${reporte.porcentajeCambioDolares >= 0 ? '+' : ''}${reporte.porcentajeCambioDolares.toFixed(2)}%)`, margin + 55, yPosition);
+      }
+      yPosition += 7;
+
+      pdf.setTextColor(245, 158, 11);
+      pdf.text(`Euros: € ${reporte.totalEuros.toFixed(2)}`, margin + 5, yPosition);
+      if (reporte.porcentajeCambioEuros !== null && reporte.porcentajeCambioEuros !== undefined) {
+        pdf.setTextColor(reporte.porcentajeCambioEuros >= 0 ? 22 : 185, reporte.porcentajeCambioEuros >= 0 ? 163 : 28, reporte.porcentajeCambioEuros >= 0 ? 74 : 28);
+        pdf.text(`(${reporte.porcentajeCambioEuros >= 0 ? '+' : ''}${reporte.porcentajeCambioEuros.toFixed(2)}%)`, margin + 55, yPosition);
+      }
+      yPosition += 15;
+
+      // Totales mes anterior
+      pdf.setFontSize(14);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Totales del Mes Anterior', margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(`Soles: S/ ${(reporte.totalSolesMesAnterior ?? 0).toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 7;
+      pdf.text(`Dólares: $ ${(reporte.totalDolaresMesAnterior ?? 0).toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 7;
+      pdf.text(`Euros: € ${(reporte.totalEurosMesAnterior ?? 0).toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 15;
+
+      // Resumen
+      pdf.setFontSize(12);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Resumen', margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(75, 85, 99);
+      
+      const cambioTextoSoles = reporte.porcentajeCambioSoles !== null && reporte.porcentajeCambioSoles !== undefined
+        ? `${reporte.porcentajeCambioSoles >= 0 ? 'aumento' : 'disminución'} del ${Math.abs(reporte.porcentajeCambioSoles).toFixed(2)}%`
+        : 'sin cambios';
+      
+      pdf.text(`• Los ingresos en Soles tuvieron un ${cambioTextoSoles} respecto al mes anterior.`, margin + 3, yPosition);
+      yPosition += 6;
+
+      const cambioTextoDolares = reporte.porcentajeCambioDolares !== null && reporte.porcentajeCambioDolares !== undefined
+        ? `${reporte.porcentajeCambioDolares >= 0 ? 'aumento' : 'disminución'} del ${Math.abs(reporte.porcentajeCambioDolares).toFixed(2)}%`
+        : 'sin cambios';
+      
+      pdf.text(`• Los ingresos en Dólares tuvieron un ${cambioTextoDolares} respecto al mes anterior.`, margin + 3, yPosition);
+      yPosition += 6;
+
+      const cambioTextoEuros = reporte.porcentajeCambioEuros !== null && reporte.porcentajeCambioEuros !== undefined
+        ? `${reporte.porcentajeCambioEuros >= 0 ? 'aumento' : 'disminución'} del ${Math.abs(reporte.porcentajeCambioEuros).toFixed(2)}%`
+        : 'sin cambios';
+      
+      pdf.text(`• Los ingresos en Euros tuvieron un ${cambioTextoEuros} respecto al mes anterior.`, margin + 3, yPosition);
+
+      // Guardar PDF
+      const fileName = `reporte_general_${mesesNombres[mes - 1]}_${anio}_${new Date().getTime()}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      alert('Error al generar el PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Filtros */}
@@ -496,6 +783,18 @@ const ReporteGeneral: React.FC = () => {
             />
           </div>
         </div>
+        {!loading && reporte && (
+          <div className="mt-4 flex justify-end">
+            <Button 
+              onClick={handleExportPDF} 
+              disabled={exportingPdf}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {exportingPdf ? <LoadingSpinner size="sm" /> : <Download className="w-4 h-4 mr-2" />}
+              Exportar PDF
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Error */}
@@ -662,6 +961,7 @@ const ReporteFinanciero: React.FC = () => {
   const [error, setError] = useState('');
   const [mes, setMes] = useState<number | null>(new Date().getMonth() + 1);
   const [anio, setAnio] = useState<number | null>(new Date().getFullYear());
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   useEffect(() => {
     loadReporte();
@@ -734,6 +1034,150 @@ const ReporteFinanciero: React.FC = () => {
     categoriaNombre: getCategoriaName(cat.categoria)
   }));
 
+  const handleExportPDF = async () => {
+    if (!reporte) return;
+    
+    setExportingPdf(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      let yPosition = margin;
+      
+      // Título
+      pdf.setFontSize(20);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Reporte Financiero - Gastos vs Ingresos', margin, yPosition + 10);
+      yPosition += 20;
+      
+      // Período
+      pdf.setFontSize(12);
+      pdf.setTextColor(107, 114, 128);
+      const periodoTexto = mes === null || anio === null 
+        ? 'Global (Todos los períodos)' 
+        : `${mesesNombres[(mes ?? 1) - 1]} ${anio}`;
+      pdf.text(`Período: ${periodoTexto}`, margin, yPosition);
+      yPosition += 7;
+      
+      pdf.setFontSize(9);
+      pdf.text(`Generado: ${new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`, margin, yPosition);
+      yPosition += 15;
+
+      // Estado Financiero
+      pdf.setFontSize(14);
+      if (reporte.estadoFinanciero === 'Positivo') {
+        pdf.setTextColor(21, 128, 61);
+      } else {
+        pdf.setTextColor(185, 28, 28);
+      }
+      pdf.text(`Estado Financiero: ${reporte.estadoFinanciero}`, margin, yPosition);
+      yPosition += 10;
+
+      // Totales
+      pdf.setFontSize(12);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Resumen de Ingresos', margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(59, 130, 246);
+      pdf.text(`Soles: S/ ${reporte.totalIngresosSoles.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 6;
+      pdf.setTextColor(16, 185, 129);
+      pdf.text(`Dólares: $ ${reporte.totalIngresosDolares.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Resumen de Gastos', margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(234, 88, 12);
+      pdf.text(`Soles: S/ ${reporte.totalGastosSoles.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 6;
+      pdf.setTextColor(185, 28, 28);
+      pdf.text(`Dólares: $ ${reporte.totalGastosDolares.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(31, 41, 55);
+      pdf.text('Balance', margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(reporte.balanceSoles >= 0 ? 21 : 185, reporte.balanceSoles >= 0 ? 128 : 28, reporte.balanceSoles >= 0 ? 61 : 28);
+      pdf.text(`Soles: S/ ${reporte.balanceSoles.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 6;
+      pdf.setTextColor(reporte.balanceDolares >= 0 ? 21 : 185, reporte.balanceDolares >= 0 ? 128 : 28, reporte.balanceDolares >= 0 ? 61 : 28);
+      pdf.text(`Dólares: $ ${reporte.balanceDolares.toFixed(2)}`, margin + 5, yPosition);
+      yPosition += 12;
+
+      // Gastos por categoría
+      if (reporte.gastosPorCategoria && reporte.gastosPorCategoria.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setTextColor(31, 41, 55);
+        pdf.text('Gastos por Categoría', margin, yPosition);
+        yPosition += 8;
+
+        pdf.setFontSize(9);
+        pdf.setTextColor(75, 85, 99);
+        
+        reporte.gastosPorCategoria.forEach((cat) => {
+          const categoriaTexto = `• ${getCategoriaName(cat.categoria)}: S/ ${cat.montoSoles.toFixed(2)} | $ ${cat.montoDolares.toFixed(2)}`;
+          pdf.text(categoriaTexto, margin + 5, yPosition);
+          yPosition += 5;
+          
+          // Agregar nueva página si se necesita espacio
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+        });
+      }
+
+      // Alertas
+      if (reporte.alertaConsumoSoles) {
+        yPosition += 10;
+        if (yPosition > 250) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        pdf.setFontSize(11);
+        pdf.setTextColor(161, 98, 7);
+        pdf.text('⚠ Alerta:', margin, yPosition);
+        yPosition += 6;
+        
+        pdf.setFontSize(9);
+        pdf.setTextColor(75, 85, 99);
+        const lines = pdf.splitTextToSize(reporte.alertaConsumoSoles, pageWidth - 2 * margin);
+        lines.forEach((line: string) => {
+          pdf.text(line, margin + 5, yPosition);
+          yPosition += 5;
+        });
+      }
+
+      // Guardar PDF
+      const fileName = mes === null || anio === null
+        ? `reporte_financiero_global_${new Date().getTime()}.pdf`
+        : `reporte_financiero_${mesesNombres[(mes ?? 1) - 1]}_${anio}_${new Date().getTime()}.pdf`;
+      
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      alert('Error al generar el PDF');
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Filtros */}
@@ -766,6 +1210,18 @@ const ReporteFinanciero: React.FC = () => {
             </select>
           </div>
         </div>
+        {!loading && reporte && (
+          <div className="mt-4 flex justify-end">
+            <Button 
+              onClick={handleExportPDF} 
+              disabled={exportingPdf}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {exportingPdf ? <LoadingSpinner size="sm" /> : <Download className="w-4 h-4 mr-2" />}
+              Exportar PDF
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Error */}
