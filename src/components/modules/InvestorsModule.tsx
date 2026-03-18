@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, Filter, FileText } from 'lucide-react';
+import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, Filter, FileText, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { Badge } from '../ui/Badge';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Pagination } from '../ui/Pagination';
 import { Inversor, InversorRequest, PagoInversor, PagoInversorRequest, Tipo, Region } from '../../types';
@@ -503,6 +504,7 @@ const PagosTab: React.FC = () => {
   // Usuarios restringidos comparten vista limitada. '003871056' además sólo puede crear pagos para microinversionistas.
   const isRestrictedUser = user?.dni === '00516107' || user?.dni === '003871056';
   const isMicroOnlyUser = user?.dni === '003871056';
+  const isAdmin = user?.rol === 'Admin';
 
   const [pagos, setPagos] = useState<PagoInversor[]>([]);
   const [tipos, setTipos] = useState<Tipo[]>([]);
@@ -511,6 +513,9 @@ const PagosTab: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState('');
+  const [deletingPago, setDeletingPago] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [pagoToDelete, setPagoToDelete] = useState<PagoInversor | null>(null);
   const [formData, setFormData] = useState<PagoInversorRequest>({
     idInversor: '',
     monto: 0,
@@ -700,6 +705,36 @@ const PagosTab: React.FC = () => {
   const handleGenerarBoleta = (pago: PagoInversor) => {
     setBoletaPago(pago);
     setIsBoletaModalOpen(true);
+  };
+
+  const handleDeletePagoClick = (pago: PagoInversor) => {
+    setPagoToDelete(pago);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeletePagoConfirm = async () => {
+    if (!pagoToDelete) return;
+
+    setDeletingPago(true);
+    setError('');
+
+    try {
+      await investorsApi.deletePagoInversor(pagoToDelete.id);
+      await loadData();
+      setIsDeleteDialogOpen(false);
+      setPagoToDelete(null);
+    } catch (error) {
+      setError('Error al eliminar el pago');
+      console.error('Error deleting pago inversor:', error);
+    } finally {
+      setDeletingPago(false);
+    }
+  };
+
+  const handleDeletePagoCancel = () => {
+    if (deletingPago) return;
+    setIsDeleteDialogOpen(false);
+    setPagoToDelete(null);
   };
 
   const handleImprimirBoleta = () => {
@@ -923,6 +958,17 @@ const PagosTab: React.FC = () => {
                     >
                       <FileText className="w-4 h-4" />
                     </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePagoClick(pago)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                        title="Eliminar Pago"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -1163,6 +1209,20 @@ const PagosTab: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={handleDeletePagoCancel}
+        onConfirm={handleDeletePagoConfirm}
+        title="Eliminar Pago de Inversor"
+        message={`¿Estás seguro de que deseas eliminar el pago de "${
+          pagoToDelete ? getInversorNombre(pagoToDelete.idInversor) : ''
+        }"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        loading={deletingPago}
+      />
     </div>
   );
 };

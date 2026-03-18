@@ -1113,6 +1113,25 @@ export const investorsApi = {
     }
   },
 
+  deletePagoInversor: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE_URL}/pagoinversores/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar pago de inversor');
+      }
+    } catch (error) {
+      console.error('Error deleting pago inversor:', error);
+      throw error;
+    }
+  },
+
   // Tipos
   getAllTipos: async (): Promise<Tipo[]> => {
     try {
