@@ -3,6 +3,12 @@ import { AuthResponse, LoginRequest, Conference, User, Region, Participation, Pa
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://iglesia.amtservice.sbs/api';
 
+const CURRENCY_TO_API_VALUE: Record<number, string> = {
+  0: 'Dolares',
+  1: 'Soles',
+  2: 'Euros'
+};
+
 //test
 // Auth API
 export const authApi = {
@@ -1053,13 +1059,19 @@ export const investorsApi = {
   createPagoInversor: async (pago: PagoInversorRequest): Promise<PagoInversor> => {
     try {
       const token = localStorage.getItem('auth_token');
+      const payload = {
+        ...pago,
+        currency: typeof pago.currency === 'number' ? (CURRENCY_TO_API_VALUE[pago.currency] || 'Soles') : pago.currency,
+        fechaCreacion: new Date(pago.fechaCreacion).toISOString()
+      };
+
       const response = await fetch(`${API_BASE_URL}/pagoinversores`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(pago)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

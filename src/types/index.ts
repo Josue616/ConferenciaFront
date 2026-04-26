@@ -353,7 +353,8 @@ export interface PagoInversor {
 export interface PagoInversorRequest {
   idInversor: string;
   monto: number;
-  currency: number; // 0: Dolares, 1: Soles, 2: Euros
+  currency: number | string; // 0: Dolares, 1: Soles, 2: Euros o string
+  fechaCreacion: string;
   idTipo: string;
 }
 

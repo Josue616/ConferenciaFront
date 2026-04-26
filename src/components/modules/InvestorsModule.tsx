@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, Filter, FileText, Trash2 } from 'lucide-react';
+import { Users, CreditCard, Tag, BarChart3, Plus, Edit, Search, DollarSign, Coins, Euro, MapPin, Filter, FileText, Trash2, CalendarDays } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
@@ -516,10 +516,17 @@ const PagosTab: React.FC = () => {
   const [deletingPago, setDeletingPago] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pagoToDelete, setPagoToDelete] = useState<PagoInversor | null>(null);
+  const getCurrentDateTimeLocal = () => {
+    const now = new Date();
+    const timezoneOffset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 16);
+  };
+
   const [formData, setFormData] = useState<PagoInversorRequest>({
     idInversor: '',
     monto: 0,
     currency: 0,
+    fechaCreacion: getCurrentDateTimeLocal(),
     idTipo: ''
   });
 
@@ -625,7 +632,7 @@ const PagosTab: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ idInversor: '', monto: 0, currency: 0, idTipo: '' });
+    setFormData({ idInversor: '', monto: 0, currency: 0, fechaCreacion: getCurrentDateTimeLocal(), idTipo: '' });
     setInversorSearchTerm('');
     setShowInversorDropdown(false);
   };
@@ -1064,6 +1071,22 @@ const PagosTab: React.FC = () => {
               <option value={1}>💰 Soles</option>
               <option value={2}>💶 Euros</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de creación
+            </label>
+            <div className="relative">
+              <CalendarDays className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="datetime-local"
+                value={formData.fechaCreacion}
+                onChange={(e) => setFormData(prev => ({ ...prev, fechaCreacion: e.target.value }))}
+                className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                required
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Se enviará en formato ISO al servidor.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
